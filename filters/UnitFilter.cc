@@ -14,14 +14,14 @@ class UnitFilter: public ClauseFilter {
 public:
   UnitFilter();
   virtual ~UnitFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
 };
 
 UnitFilter::UnitFilter() { }
 
 UnitFilter::~UnitFilter() { }
 
-bool UnitFilter::meetCriteria(Analyzer::Clause* clause) {
+bool UnitFilter::meetCriteria(Dark::Clause* clause) {
   return clause->size() == 1;
 }
 

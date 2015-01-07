@@ -9,7 +9,7 @@
 #include "Clause.h"
 #include "stdio.h"
 
-namespace Analyzer {
+namespace Dark {
 
 /**
  * Constructors

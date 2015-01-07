@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <memory>
 
-namespace Analyzer {
+namespace Dark {
 
 /**
  * Constructor
@@ -139,7 +139,7 @@ void ClauseList::unmarkAll() {
  */
 void ClauseList::print(FILE* out) {
   for (unsigned int i = 0; i < clauses->size(); ++i) {
-    Analyzer::Clause* clause = (*clauses)[i];
+    Dark::Clause* clause = (*clauses)[i];
     if (clause != NULL) {
       clause->print(out);
     } else {

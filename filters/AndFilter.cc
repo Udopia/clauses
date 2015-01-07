@@ -17,7 +17,7 @@ private:
 public:
   AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right);
   virtual ~AndFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
 };
 
 AndFilter::AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right) {
@@ -27,7 +27,7 @@ AndFilter::AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseF
 
 AndFilter::~AndFilter() { }
 
-bool AndFilter::meetCriteria(Analyzer::Clause* clause) {
+bool AndFilter::meetCriteria(Dark::Clause* clause) {
   return left->meetCriteria(clause) && right->meetCriteria(clause);
 }
 

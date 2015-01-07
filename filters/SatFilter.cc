@@ -13,28 +13,28 @@
 class SatFilter: public ClauseFilter {
 
 private:
-  Analyzer::Cube* model;
+  Dark::Cube* model;
 
 public:
-  SatFilter(Analyzer::Cube* model);
+  SatFilter(Dark::Cube* model);
   virtual ~SatFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
 };
 
-SatFilter::SatFilter(Analyzer::Cube* model) {
+SatFilter::SatFilter(Dark::Cube* model) {
   this->model = model;
 }
 
 SatFilter::~SatFilter() { }
 
-bool SatFilter::meetCriteria(Analyzer::Clause* clause) {
+bool SatFilter::meetCriteria(Dark::Clause* clause) {
   return model->satisfies(clause);
 }
 
 /**
  * Implementation for IClauseFilters method
  */
-std::unique_ptr<ClauseFilter> createSatFilter(Analyzer::Cube* model) {
+std::unique_ptr<ClauseFilter> createSatFilter(Dark::Cube* model) {
   return std::unique_ptr<ClauseFilter>(new SatFilter(model));
 }
 

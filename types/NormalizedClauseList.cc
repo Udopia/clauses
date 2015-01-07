@@ -10,7 +10,7 @@
 #include "ClauseList.h"
 #include "Cube.h"
 
-namespace Analyzer {
+namespace Dark {
 
 NormalizedClauseList::NormalizedClauseList(Cube* model) {
   this->model = model;

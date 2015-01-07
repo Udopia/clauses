@@ -15,7 +15,7 @@
 
 using namespace std;
 
-namespace Analyzer {
+namespace Dark {
 
 class Clause: public Literals {
 private:

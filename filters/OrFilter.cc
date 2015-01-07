@@ -17,7 +17,7 @@ private:
 public:
   OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right);
   virtual ~OrFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
 };
 
 OrFilter::OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right) {
@@ -27,7 +27,7 @@ OrFilter::OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFil
 
 OrFilter::~OrFilter() { }
 
-bool OrFilter::meetCriteria(Analyzer::Clause* clause) {
+bool OrFilter::meetCriteria(Dark::Clause* clause) {
   return left->meetCriteria(clause) || right->meetCriteria(clause);
 }
 

@@ -17,7 +17,7 @@ namespace Minisat {
   struct Lit;
 }
 
-namespace Analyzer {
+namespace Dark {
 
 class Clause;
 class Cube;
@@ -25,7 +25,7 @@ class Cube;
 /**
  * Only keep the satisfied literals (wrt. the given model) of each added clause
  */
-class NormalizedClauseList: public Analyzer::ClauseList {
+class NormalizedClauseList: public Dark::ClauseList {
 public:
   NormalizedClauseList(Cube* model);
   virtual ~NormalizedClauseList();

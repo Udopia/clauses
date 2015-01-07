@@ -11,7 +11,7 @@
 #include "Cube.h"
 #include <vector>
 
-namespace Analyzer {
+namespace Dark {
 
 class Clause;
 class ClauseList;

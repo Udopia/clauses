@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <string>
 
-namespace Analyzer {
+namespace Dark {
 
 class Literals {
 

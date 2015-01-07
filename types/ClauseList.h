@@ -15,7 +15,7 @@
 
 using namespace std;
 
-namespace Analyzer {
+namespace Dark {
 
 class ClauseList {
 private:

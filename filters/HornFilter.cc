@@ -14,16 +14,16 @@ class HornFilter: public ClauseFilter {
 public:
   HornFilter();
   virtual ~HornFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
 };
 
 HornFilter::HornFilter() { }
 
 HornFilter::~HornFilter() { }
 
-bool HornFilter::meetCriteria(Analyzer::Clause* clause) {
+bool HornFilter::meetCriteria(Dark::Clause* clause) {
   int count = 0;
-  for (Analyzer::Clause::iterator lit = clause->begin(); lit != clause->end(); lit++) {
+  for (Dark::Clause::iterator lit = clause->begin(); lit != clause->end(); lit++) {
     if (!sign(*lit)) count++;
   }
   return count <= 1;

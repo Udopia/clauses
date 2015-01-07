@@ -17,13 +17,13 @@ namespace Minisat {
   struct Lit;
 }
 
-namespace Analyzer {
+namespace Dark {
 
 class Clause;
 
 class MappedClauseList: public ClauseList {
 private:
-  std::map<Literal, Analyzer::ClauseList*>* clauseMap;
+  std::map<Literal, Dark::ClauseList*>* clauseMap;
   int maxVar;
 
 public:

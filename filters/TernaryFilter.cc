@@ -14,14 +14,14 @@ class TernaryFilter: public ClauseFilter {
 public:
   TernaryFilter();
   virtual ~TernaryFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
 };
 
 TernaryFilter::TernaryFilter() { }
 
 TernaryFilter::~TernaryFilter() { }
 
-bool TernaryFilter::meetCriteria(Analyzer::Clause* clause) {
+bool TernaryFilter::meetCriteria(Dark::Clause* clause) {
   return clause->size() == 3;
 }
 

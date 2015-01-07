@@ -16,7 +16,7 @@ private:
 public:
   NotFilter(std::unique_ptr<ClauseFilter> argument);
   virtual ~NotFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
 };
 
 NotFilter::NotFilter(std::unique_ptr<ClauseFilter> argument) {
@@ -25,7 +25,7 @@ NotFilter::NotFilter(std::unique_ptr<ClauseFilter> argument) {
 
 NotFilter::~NotFilter() { }
 
-bool NotFilter::meetCriteria(Analyzer::Clause* clause) {
+bool NotFilter::meetCriteria(Dark::Clause* clause) {
   return !argument->meetCriteria(clause);
 }
 

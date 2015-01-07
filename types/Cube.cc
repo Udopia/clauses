@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-namespace Analyzer {
+namespace Dark {
 
 /**
  * Constructors

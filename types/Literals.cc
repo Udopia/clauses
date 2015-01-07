@@ -7,7 +7,7 @@
 
 #include "Literals.h"
 
-namespace Analyzer {
+namespace Dark {
 
 Literals::Literals() {
   literals = new std::vector<Literal>();

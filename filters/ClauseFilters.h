@@ -12,7 +12,7 @@
 
 #include "ClauseFilter.h"
 
-namespace Analyzer {
+namespace Dark {
   class FixedSizeCube;
 }
 
@@ -23,9 +23,9 @@ std::unique_ptr<ClauseFilter> createMaxLengthFilter(int length);
 
 std::unique_ptr<ClauseFilter> createHornFilter();
 
-std::unique_ptr<ClauseFilter> createSatFilter(Analyzer::FixedSizeCube* model);
-std::unique_ptr<ClauseFilter> createUnsatFilter(Analyzer::FixedSizeCube* model);
-std::unique_ptr<ClauseFilter> createMaxCardinalityFilter(Analyzer::FixedSizeCube* model, int cardinality);
+std::unique_ptr<ClauseFilter> createSatFilter(Dark::FixedSizeCube* model);
+std::unique_ptr<ClauseFilter> createUnsatFilter(Dark::FixedSizeCube* model);
+std::unique_ptr<ClauseFilter> createMaxCardinalityFilter(Dark::FixedSizeCube* model, int cardinality);
 
 std::unique_ptr<ClauseFilter> createConstantTrueFilter();
 

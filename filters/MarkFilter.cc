@@ -14,7 +14,7 @@ class MarkFilter: public ClauseFilter {
 public:
   MarkFilter();
   virtual ~MarkFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
   virtual void print();
 };
 
@@ -22,7 +22,7 @@ MarkFilter::MarkFilter() { }
 
 MarkFilter::~MarkFilter() { }
 
-bool MarkFilter::meetCriteria(Analyzer::Clause* clause) {
+bool MarkFilter::meetCriteria(Dark::Clause* clause) {
   return clause->isMarked();
 }
 

@@ -14,14 +14,14 @@ class BinaryFilter: public ClauseFilter {
 public:
   BinaryFilter();
   virtual ~BinaryFilter();
-  virtual bool meetCriteria(Analyzer::Clause* clause);
+  virtual bool meetCriteria(Dark::Clause* clause);
 };
 
 BinaryFilter::BinaryFilter() { }
 
 BinaryFilter::~BinaryFilter() { }
 
-bool BinaryFilter::meetCriteria(Analyzer::Clause* clause) {
+bool BinaryFilter::meetCriteria(Dark::Clause* clause) {
   return clause->size() == 2;
 }
 
