@@ -10,6 +10,8 @@
 
 namespace Dark {
 class Clause;
+class Cube;
+class FixedSizeCube;
 }
 
 class ClauseFilter {

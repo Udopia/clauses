@@ -6,7 +6,7 @@
  */
 
 #include "Cube.h"
-
+#include "Literals.h"
 #include "ClauseList.h"
 
 #include <algorithm>
@@ -66,6 +66,16 @@ bool Cube::isConsistentWith(Cube* cube) {
   return true;
 }
 
+int Cube::cardinality(Clause* clause) {
+  int count = 0;
+  for (unsigned int j = 0; j < clause->size(); j++) {
+    if (this->contains(clause->get(j))) {
+      count++;
+    }
+  }
+  return count;
+}
+
 bool Cube::satisfies(Clause* clause) {
   for (unsigned int j = 0; j < clause->size(); j++) {
     if (this->contains(clause->get(j))) {
@@ -73,6 +83,15 @@ bool Cube::satisfies(Clause* clause) {
     }
   }
   return false;
+}
+
+bool Cube::falsifies(Clause* clause) {
+  for (unsigned int j = 0; j < clause->size(); j++) {
+    if (!this->contains(~(clause->get(j)))) {
+      return false;
+    }
+  }
+  return true;
 }
 
 ClauseList* Cube::checkSatisfied(ClauseList* list) {

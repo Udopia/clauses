@@ -7,7 +7,7 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
+#include "../Clause.h"
 
 class BinaryFilter: public ClauseFilter {
 

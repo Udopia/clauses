@@ -13,7 +13,7 @@
 #include "ClauseFilter.h"
 
 namespace Dark {
-  class FixedSizeCube;
+  class Cube;
 }
 
 std::unique_ptr<ClauseFilter> createUnitFilter();
@@ -23,13 +23,11 @@ std::unique_ptr<ClauseFilter> createMaxLengthFilter(int length);
 
 std::unique_ptr<ClauseFilter> createHornFilter();
 
-std::unique_ptr<ClauseFilter> createSatFilter(Dark::FixedSizeCube* model);
-std::unique_ptr<ClauseFilter> createUnsatFilter(Dark::FixedSizeCube* model);
-std::unique_ptr<ClauseFilter> createMaxCardinalityFilter(Dark::FixedSizeCube* model, int cardinality);
+std::unique_ptr<ClauseFilter> createSatFilter(Dark::Cube* model);
+std::unique_ptr<ClauseFilter> createUnsatFilter(Dark::Cube* model);
+std::unique_ptr<ClauseFilter> createCardinalityFilter(Dark::Cube* model, int length);
 
 std::unique_ptr<ClauseFilter> createConstantTrueFilter();
-
-std::unique_ptr<ClauseFilter> createMarkFilter();
 
 std::unique_ptr<ClauseFilter> createNotFilter(std::unique_ptr<ClauseFilter> argument);
 std::unique_ptr<ClauseFilter> createAndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right);

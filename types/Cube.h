@@ -30,7 +30,9 @@ public:
   void clear();
   bool isConsistentWith(Cube* cube);
 
+  int cardinality(Clause* clause);
   bool satisfies(Clause* clause);
+  bool falsifies(Clause* clause);
 
   ClauseList* checkSatisfied(ClauseList* list);
   Cube* clone();
