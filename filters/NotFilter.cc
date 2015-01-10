@@ -7,7 +7,7 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../Clause.h"
+#include "../types/Clause.h"
 
 class NotFilter: public ClauseFilter {
 private:

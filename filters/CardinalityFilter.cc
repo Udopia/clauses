@@ -7,8 +7,8 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../Clause.h"
-#include "../Cube.h"
+#include "../types/Clause.h"
+#include "../types/Cube.h"
 
 class CardinalityFilter: public ClauseFilter {
 

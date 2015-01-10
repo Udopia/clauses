@@ -7,7 +7,8 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../Clause.h"
+#include "../types/Clause.h"
+#include "../types/Literal.h"
 
 class HornFilter: public ClauseFilter {
 
