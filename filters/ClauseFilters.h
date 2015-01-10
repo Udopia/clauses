@@ -16,6 +16,8 @@ namespace Dark {
   class Cube;
 }
 
+std::unique_ptr<ClauseFilter> createMarkFilter();
+
 std::unique_ptr<ClauseFilter> createUnitFilter();
 std::unique_ptr<ClauseFilter> createBinaryFilter();
 std::unique_ptr<ClauseFilter> createTernaryFilter();
