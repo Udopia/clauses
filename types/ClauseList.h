@@ -11,6 +11,7 @@
 #include <vector>
 #include <memory>
 #include "Clause.h"
+#include "Literal.h"
 #include "../filters/ClauseFilter.h"
 
 using namespace std;

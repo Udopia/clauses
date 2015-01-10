@@ -9,6 +9,7 @@
 #define FIXEDSIZECUBE_H_
 
 #include "Cube.h"
+#include "Literal.h"
 #include <vector>
 
 namespace Dark {

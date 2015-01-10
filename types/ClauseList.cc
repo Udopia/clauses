@@ -6,6 +6,7 @@
  */
 
 #include "ClauseList.h"
+#include "Literal.h"
 #include "stdio.h"
 #include <cstddef>
 #include <memory>

@@ -102,7 +102,6 @@ Literals* Literals::slice(int start, int end) {
 /**
  * Accessors
  */
-
 Literals::iterator Literals::begin() {
   return literals->begin();
 }
@@ -130,7 +129,6 @@ unsigned int Literals::size() {
 /**
  * Comparators
  */
-
 bool Literals::contains(Literal literal) {
   return std::find(literals->begin(), literals->end(), literal) != literals->end();
 }
@@ -151,7 +149,6 @@ bool Literals::equals(Literals* clause) {
 /**
  * Output
  */
-
 void Literals::print(FILE* out) {
   fprintf(out, "(");
   for (iterator it = literals->begin(); it != literals->end(); ++it) {
@@ -188,6 +185,5 @@ Literals* Literals::allBut(Literal exclude) {
   }
   return new Literals(vec);
 }
-
 
 }

@@ -12,6 +12,9 @@
 #include <algorithm>
 #include <string>
 
+#define MINISAT_TYPES "../../minisat/core/SolverTypes.h"
+#include "Literal.h"
+
 namespace Dark {
 
 class Literals {

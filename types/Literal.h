@@ -8,9 +8,9 @@
 #ifndef LITERAL_H_
 #define LITERAL_H_
 
-#ifdef MINISAT_ROOT
-  #include MINISAT_ROOT/core/SolverTypes.h
-  typedef Minisat::Lit Literal
+#ifdef MINISAT_TYPES
+  #include MINISAT_TYPES
+  typedef Minisat::Lit Literal;
 #else
   typedef int Var;
 
