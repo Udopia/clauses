@@ -12,6 +12,7 @@
   #include MINISAT_TYPES
   typedef Minisat::Var Var;
   typedef Minisat::Lit Literal;
+  using namespace Minisat;
 #else
   typedef int Var;
 
