@@ -13,10 +13,6 @@
 #include "ClauseList.h"
 #include "MappedClauseList.h"
 
-namespace Minisat {
-  struct Lit;
-}
-
 namespace Dark {
 
 class Clause;
