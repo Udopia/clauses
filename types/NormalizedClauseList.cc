@@ -14,11 +14,11 @@ namespace Dark {
 
 NormalizedClauseList::NormalizedClauseList(Cube* model) {
   this->model = model;
-  this->denormalizedLiteral = new map<Minisat::Lit, Minisat::Lit>();
+  this->denormalizedLiteral = new map<Literal, Literal>();
 
   this->nVars = 0;
-  for (std::vector<Minisat::Lit>::iterator it = model->begin(); it != model->end(); ++it) {
-    Minisat::Lit lit = *it;
+  for (std::vector<Literal>::iterator it = model->begin(); it != model->end(); ++it) {
+    Literal lit = *it;
     if (var(lit)+1 > this->nVars) this->nVars = var(lit)+1;
   }
 }
@@ -30,8 +30,8 @@ NormalizedClauseList::~NormalizedClauseList() {
 
 void NormalizedClauseList::add(Clause* clause) {
   Clause* normalizedClause = new Clause();
-  for (std::vector<Minisat::Lit>::iterator it = clause->begin(); it != clause->end(); ++it) {
-    Minisat::Lit lit = *it;
+  for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
+    Literal lit = *it;
     if (model->contains(lit)) {
       normalizedClause->add(normalize(lit));
     }
@@ -46,7 +46,7 @@ void NormalizedClauseList::addAll(ClauseList* list) {
   }
 }
 
-Minisat::Lit NormalizedClauseList::normalize(Minisat::Lit lit) {
+Literal NormalizedClauseList::normalize(Literal lit) {
   if (sign(lit)) {
     (*denormalizedLiteral)[lit] = ~lit;
     (*denormalizedLiteral)[~lit] = lit;
@@ -58,7 +58,7 @@ Minisat::Lit NormalizedClauseList::normalize(Minisat::Lit lit) {
   }
 }
 
-Minisat::Lit NormalizedClauseList::denormalize(Minisat::Lit lit) {
+Literal NormalizedClauseList::denormalize(Literal lit) {
   return (*denormalizedLiteral)[lit];
 }
 

@@ -25,7 +25,12 @@ HornFilter::~HornFilter() { }
 bool HornFilter::meetCriteria(Dark::Clause* clause) {
   int count = 0;
   for (Dark::Clause::iterator lit = clause->begin(); lit != clause->end(); lit++) {
-    if (!sign(*lit)) count++;
+    if (!sign(*lit)) {
+      count++;
+      if (count > 1) {
+        return false;
+      }
+    }
   }
   return count <= 1;
 }
