@@ -38,8 +38,10 @@ public:
    */
   ClauseList* getRoots();
   set<Literal>* getChildren(Literal parent);
+  int countChildren(Literal parent);
   bool hasChildren(Literal parent);
   set<Literal>* getParents(Literal child);
+  int countParents(Literal child);
   bool hasParents(Literal child);
   ClauseList* getGateClauses(Literal Literaleral);
   ClauseList* getNotMarkedClauses();

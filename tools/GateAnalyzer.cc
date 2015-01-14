@@ -95,52 +95,78 @@ set<Literal>* GateAnalyzer::getChildren(Literal parent) {
   return (*children)[parent];
 }
 
+int GateAnalyzer::countChildren(Literal parent) {
+  return getChildren(parent)->size();
+}
+
 bool GateAnalyzer::hasChildren(Literal parent) {
-  return getChildren(parent)->size() > 0;
+  return countChildren(parent) > 0;
 }
 
 set<Literal>* GateAnalyzer::getParents(Literal child) {
   return (*parents)[child];
 }
 
+int GateAnalyzer::countParents(Literal child) {
+  return getParents(child)->size();
+}
+
 bool GateAnalyzer::hasParents(Literal child) {
-  return getParents(child)->size() > 0;
+  return countParents(child) > 0;
 }
 
 void GateAnalyzer::setParentChild(Literal parent, Literal child) {
   D2(fprintf(stderr, "Adding Parent-child-relationship: %s%i -> %s%i\n", sign(parent)?"-":"", var(parent)+1, sign(child)?"-":"", var(child)+1);)
-
   (*children)[parent]->insert(child);
   (*parents)[child]->insert(parent);
 }
 
 void GateAnalyzer::unsetParentChild(Literal parent) {
-  fprintf(stderr, "unset parent %s%i, ", sign(parent)?"-":"", var(parent)+1);
+  D2(fprintf(stderr, "unset parent %s%i, ", sign(parent)?"-":"", var(parent)+1);)
   for (set<Literal>::iterator it = (*children)[parent]->begin(); it != (*children)[parent]->end(); it++) {
     Literal child = *it;
-    fprintf(stderr, "child %s%i, ", sign(*it)?"-":"", var(*it)+1);
+    D2(fprintf(stderr, "child %s%i, ", sign(*it)?"-":"", var(*it)+1);)
     (*parents)[child]->erase(parent);
   }
-  D1(
-  for (set<Literal>::iterator it = (*children)[parent]->begin(); it != (*children)[parent]->end(); it++) {
-    Literal child = *it;
-    for (set<Literal>::iterator it2 = (*parents)[child]->begin(); it2 != (*parents)[child]->end(); it2++) {
-      fprintf(stderr, "%s%i, ", sign(*it2)?"-":"", var(*it2)+1);
-    }
-  }
-  )
   delete (*children)[parent];
   (*children)[parent] = new set<Literal>();
 }
 
 void GateAnalyzer::analyzeEncoding() {
   ClauseList* roots = getRoots();
+  Literal root;
 
-  for (int i = 0; i < roots->size(); i++) {
-    Literal root = roots->get(i)->getFirst();
-    roots->get(i)->setMarked(); // visited
-    analyzeEncoding(root);
+  if (roots->size() == 1) {
+    roots->get(0)->setMarked();
+    root = roots->get(0)->getFirst();
   }
+  else if (roots->size() > 1) {
+    root = clauses->nVars();
+    Clause* unit = new Clause(root);
+    clauses->add(unit);
+    unit->setMarked();
+    for (int i = 0; i < roots->size(); i++) {
+      roots->get(i)->add(~root);
+    }
+  }
+  else if (roots->size() == 0) {
+    // heuristic selects maximum variable
+    Var max = clauses->nVars() -1;
+    root = mkLit(max, false);
+    if (clauses->countOccurence(root) == 0) {
+      root = ~root;
+    }
+    delete roots;
+    roots = clauses->getClauses(root);
+    Clause* unit = new Clause(root);
+    clauses->add(unit);
+    unit->setMarked();
+    for (int i = 0; i < roots->size(); i++) {
+      roots->get(i)->add(~root);
+    }
+  }
+
+  analyzeEncoding(root);
 
   delete roots;
 }
@@ -194,7 +220,7 @@ bool GateAnalyzer::classifyEncoding(Literal output) {
 
     if (this->use_refinement) {
       // try to fix it
-      if (getParents(~output)->size() == 1) {
+      if (countParents(~output) == 1) {
         Literal parent = *(getParents(~output)->begin());
         D1(fprintf(stderr, "Found one parent %s%i\n\n", sign(parent)?"-":"", var(parent)+1);)
         if ((*forwardClauses)[parent]->size() == 1) {
@@ -383,10 +409,7 @@ ClauseList* GateAnalyzer::getPrunedGateProblem(Cube* inputModel) {
     }
   }
   D1(fprintf(stderr, "Pruned at literals: ");
-//  std::for_each(prunedLits->begin(), prunedLits->end(), [this](Literal n){ fprintf(stderr, "%s%i, ", sign(n) ? "-" : "", var(n)+1); });
-  for (set<Literal>::iterator it = prunedLits->begin(); it != prunedLits->end(); it++) {
-    fprintf(stderr, "%s%i, ", sign(*it) ? "-" : "", var(*it)+1);
-  }
+  std::for_each(prunedLits->begin(), prunedLits->end(), [this](Literal n){ fprintf(stderr, "%s%i, ", sign(n) ? "-" : "", var(n)+1); });
   fprintf(stderr, "\n");)
 
   delete literals;
