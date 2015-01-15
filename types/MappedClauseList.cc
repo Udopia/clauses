@@ -6,8 +6,6 @@
  */
 
 #include "MappedClauseList.h"
-#define VERBOSITY 1
-#include "../debug.h"
 #include "Clause.h"
 
 namespace Dark {
@@ -73,7 +71,6 @@ ClauseList* MappedClauseList::getClauses(Literal literal) {
 }
 
 int MappedClauseList::countOccurence(Literal literal) {
-  D1(fprintf(stderr, "%s%i\n", sign(literal)?"-":"", var(literal)+1);)
   return (*clauseMap)[literal]->size();
 }
 

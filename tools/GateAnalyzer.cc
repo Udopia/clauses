@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#define VERBOSITY 1
+#define VERBOSITY 0
 #include "../debug.h"
 
 namespace Dark {
@@ -237,14 +237,11 @@ bool GateAnalyzer::classifyEncoding(Literal output) {
         if ((*forwardClauses)[parent]->size() == 1) {
           D1(fprintf(stderr, "########Found one forward clause. Fixing it.\n");)
           unsetParentChild(parent);
-          fprintf(stderr, "Unregister gate clauses: \n");
-          (*forwardClauses)[parent]->print(stderr);
-          (*backwardClauses)[parent]->print(stderr);
           (*forwardClauses)[parent]->unmarkAll();
           (*backwardClauses)[parent]->unmarkAll();
           delete (*forwardClauses)[parent];
-          (*forwardClauses)[parent] = new ClauseList();
           delete (*backwardClauses)[parent];
+          (*forwardClauses)[parent] = new ClauseList();
           (*backwardClauses)[parent] = new ClauseList();
           if (!classifyEncoding(output)) {
             D1(fprintf(stderr, "######Refinement Failed. Redo old stuff.\n");)

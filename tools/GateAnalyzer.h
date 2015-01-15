@@ -15,8 +15,6 @@
 #include <algorithm>
 
 #include "Projection.h"
-#define VERBOSITY 1
-#include "../debug.h"
 #include "../types/Literal.h"
 #include "../types/ClauseList.h"
 
