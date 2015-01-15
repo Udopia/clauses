@@ -6,7 +6,8 @@
  */
 
 #include "MappedClauseList.h"
-
+#define VERBOSITY 1
+#include "../debug.h"
 #include "Clause.h"
 
 namespace Dark {
@@ -47,11 +48,32 @@ void MappedClauseList::add(Clause* clause) {
   }
 }
 
+void MappedClauseList::augment(Clause* clause, Literal lit) {
+  clause->add(lit);
+
+  // create missing clause-list for both Literalerals
+  if (clauseMap->count(lit) <= 0) {
+    (*clauseMap)[lit] = new Dark::ClauseList();
+  }
+  if (clauseMap->count(~lit) <= 0) {
+    (*clauseMap)[~lit] = new Dark::ClauseList();
+  }
+
+  if (maxVar < var(lit)) {
+    maxVar = var(lit);
+  }
+
+  // fetch and update clause-list
+  Dark::ClauseList* clauseList = (*clauseMap)[lit];
+  clauseList->add(clause);
+}
+
 ClauseList* MappedClauseList::getClauses(Literal literal) {
   return (*clauseMap)[literal];
 }
 
 int MappedClauseList::countOccurence(Literal literal) {
+  D1(fprintf(stderr, "%s%i\n", sign(literal)?"-":"", var(literal)+1);)
   return (*clauseMap)[literal]->size();
 }
 

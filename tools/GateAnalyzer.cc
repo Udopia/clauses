@@ -10,7 +10,6 @@
 #include "../types/Cube.h"
 #include "../types/FixedSizeCube.h"
 #include "../types/Clause.h"
-#include "../types/ClauseList.h"
 #include "../types/MappedClauseList.h"
 
 #include "../filters/ClauseFilters.h"
@@ -18,6 +17,7 @@
 #include "Projection.h"
 #include "GateAnalyzer.h"
 
+#include <assert.h>
 
 #define VERBOSITY 1
 #include "../debug.h"
@@ -37,14 +37,7 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, bool use_refinement) {
   this->use_refinement = use_refinement;
 
   for (int i = 0; i < clauses->nVars(); i++) {
-    (*forwardClauses)[mkLit(i, false)] = new ClauseList();
-    (*forwardClauses)[mkLit(i, true)] = new ClauseList();
-    (*backwardClauses)[mkLit(i, false)] = new ClauseList();
-    (*backwardClauses)[mkLit(i, true)] = new ClauseList();
-    (*children)[mkLit(i, false)] = new set<Literal>();
-    (*children)[mkLit(i, true)] = new set<Literal>();
-    (*parents)[mkLit(i, false)] = new set<Literal>();
-    (*parents)[mkLit(i, true)] = new set<Literal>();
+    newVar();
   }
 }
 
@@ -54,6 +47,7 @@ GateAnalyzer::~GateAnalyzer() {
   delete forwardClauses;
   delete backwardClauses;
   delete children;
+  delete parents;
 }
 
 void GateAnalyzer::freeAllContent() {
@@ -73,18 +67,32 @@ void GateAnalyzer::freeAllContent() {
   for (map<Literal, set<Literal>*>::iterator it = parents->begin(); it != parents->end(); ++it) {
     delete it->second;
   }
-  delete forwardClauses;
-  delete backwardClauses;
-  delete children;
-  delete parents;
 }
-
 
 ClauseList* GateAnalyzer::getGateClauses(Literal literal) {
   D2(fprintf(stderr, "Request for Gate Clause of literal %s%i\n", sign(literal)?"-":"", var(literal)+1);
   (*forwardClauses)[literal]->print();
   fprintf(stderr, "\n");)
   return (*forwardClauses)[literal];
+}
+
+int GateAnalyzer::maxVar() {
+  D1(fprintf(stderr, "%i\n", max_var);)
+  return max_var;
+}
+
+int GateAnalyzer::newVar() {
+  max_var++;
+  D1(fprintf(stderr, "%i\n", max_var);)
+  (*forwardClauses)[mkLit(max_var, false)] = new ClauseList();
+  (*forwardClauses)[mkLit(max_var, true)] = new ClauseList();
+  (*backwardClauses)[mkLit(max_var, false)] = new ClauseList();
+  (*backwardClauses)[mkLit(max_var, true)] = new ClauseList();
+  (*children)[mkLit(max_var, false)] = new set<Literal>();
+  (*children)[mkLit(max_var, true)] = new set<Literal>();
+  (*parents)[mkLit(max_var, false)] = new set<Literal>();
+  (*parents)[mkLit(max_var, true)] = new set<Literal>();
+  return max_var;
 }
 
 ClauseList* GateAnalyzer::getRoots() {
@@ -141,30 +149,33 @@ void GateAnalyzer::analyzeEncoding() {
     root = roots->get(0)->getFirst();
   }
   else if (roots->size() > 1) {
-    root = clauses->nVars();
+    root = mkLit(newVar(), false);
     Clause* unit = new Clause(root);
     clauses->add(unit);
     unit->setMarked();
     for (int i = 0; i < roots->size(); i++) {
-      roots->get(i)->add(~root);
+      clauses->augment(roots->get(i), ~root);
     }
   }
   else if (roots->size() == 0) {
     // heuristic selects maximum variable
-    Var max = clauses->nVars() -1;
-    root = mkLit(max, false);
+    root = mkLit(maxVar(), false);
     if (clauses->countOccurence(root) == 0) {
       root = ~root;
     }
+    assert(clauses->countOccurence(root) != 0 && "clause must exist");
     delete roots;
     roots = clauses->getClauses(root);
+    root = mkLit(newVar(), false);
     Clause* unit = new Clause(root);
     clauses->add(unit);
     unit->setMarked();
     for (int i = 0; i < roots->size(); i++) {
-      roots->get(i)->add(~root);
+      clauses->augment(roots->get(i), ~root);
     }
   }
+
+  //clauses->print(stderr);
 
   analyzeEncoding(root);
 
@@ -254,6 +265,7 @@ bool GateAnalyzer::classifyEncoding(Literal output) {
   ClauseList* forward = clauses->getClauses(~output)->getByCriteria(createNotFilter(createMarkFilter()));
 
   if (forward->size() == 0) {
+    D1(fprintf(stderr, "Stop on %s%i as there is no forward clause\n", sign(output)?"-":"", var(output)+1);)
     result = false;
   }
   else if (isGate(output, forward, backward)) {
@@ -267,12 +279,12 @@ bool GateAnalyzer::classifyEncoding(Literal output) {
 }
 
 bool GateAnalyzer::isGate(Literal output, Dark::ClauseList* forward, Dark::ClauseList* backward) {
-  D1(fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);
-  fprintf(stderr, "Checking if ClauseList [");
-  backward->print(stderr);
-  fprintf(stderr, "] is blocked by [");
-  forward->print(stderr);
-  fprintf(stderr, "]\n");)
+  D1(fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);)
+  D2(fprintf(stderr, "Checking if ClauseList [");
+    backward->print(stderr);
+    fprintf(stderr, "] is blocked by [");
+    forward->print(stderr);
+    printf(stderr, "]\n");)
 
   // check if all remaining incoming clauses are back-implications (like in full-equivalence encoding after Tseitin)
   if (!backward->isBlockedBy(output, forward)) {
@@ -283,9 +295,9 @@ bool GateAnalyzer::isGate(Literal output, Dark::ClauseList* forward, Dark::Claus
   }
 
   if (forward->size() > 0) {
-    D1(fprintf(stderr, "Storing Gate %s%i:\n", sign(output)?"-":"", var(output)+1);)
-    D1(forward->print(stderr);)
-    D1(fprintf(stderr, "\n");)
+    D1(fprintf(stderr, "Storing Gate %s%i:\n", sign(output)?"-":"", var(output)+1);
+      forward->print(stderr);
+      fprintf(stderr, "\n");)
     setAsGate(output, forward);
   }
 

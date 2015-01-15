@@ -15,7 +15,10 @@
 #include <algorithm>
 
 #include "Projection.h"
+#define VERBOSITY 1
+#include "../debug.h"
 #include "../types/Literal.h"
+#include "../types/ClauseList.h"
 
 using namespace std;
 
@@ -23,7 +26,6 @@ namespace Dark {
 
 class Cube;
 class Clause;
-class ClauseList;
 class MappedClauseList;
 
 class GateAnalyzer {
@@ -67,7 +69,11 @@ private:
   map<Literal, ClauseList*>* backwardClauses;
   Projection* projection;
 
-  bool use_refinement;
+  bool use_refinement = false;
+  int max_var = -1;
+
+  int maxVar();
+  int newVar();
 
   void analyzeEncoding(Literal root);
 
