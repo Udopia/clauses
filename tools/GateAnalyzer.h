@@ -32,6 +32,7 @@ public:
   virtual ~GateAnalyzer();
 
   void analyzeEncoding();
+  void analyzeEncoding2();
 
   /**
    * Access Gate-Structure

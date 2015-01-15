@@ -140,6 +140,11 @@ void GateAnalyzer::unsetParentChild(Literal parent) {
   (*children)[parent] = new set<Literal>();
 }
 
+/***
+ * If there is a unit-clause, just start from there.
+ * If there are more than one unit-clauses, add a new variable and create a new and-gate from the existing unit-clauses.
+ * If there are no unit-clauses, select a clause and add a unit-clause that implies the selected clause.
+ */
 void GateAnalyzer::analyzeEncoding() {
   ClauseList* roots = getRoots();
   Literal root;
@@ -175,12 +180,60 @@ void GateAnalyzer::analyzeEncoding() {
     }
   }
 
-  //clauses->print(stderr);
-
   analyzeEncoding(root);
 
   delete roots;
 }
+
+
+/***
+ * The more general approach.
+ * Analyze until all clauses are part of the hierarchy.
+ * Select Clauses by the following heuristic:
+ * 1. first select all unit-clauses
+ * 2. if there is still a side-problem and no unit-clause left, select the one containing the biggest variable
+ * 3. in the end forge together all selected root-clauses by one unit that implies them all
+ */
+void GateAnalyzer::analyzeEncoding2() {
+  ClauseList* roots = new ClauseList();
+
+  ClauseList* units = clauses->getByCriteria(createUnitFilter());
+  for (int i = 0; i < units->size(); i++) {
+    Clause* unit = units->get(i);
+    if (unit->isMarked()) continue;
+    unit->setMarked();
+    roots->add(unit);
+    analyzeEncoding(unit->getFirst());
+  }
+  delete units;
+
+  ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
+  while (remainder->size() != 0) {
+    // select new root
+    Clause* next = remainder->get(0);
+    next->setMarked();
+    roots->add(next);
+    for (int i = 0; i < next->size(); i++) {
+      analyzeEncoding(next->get(i));
+    }
+    delete remainder;
+    remainder = clauses->getByCriteria(createNoMarkFilter());
+  }
+  delete remainder;
+
+  Literal root = mkLit(newVar(), false);
+  Clause* unit = new Clause(root);
+  clauses->add(unit);
+  unit->setMarked();
+  for (int i = 0; i < roots->size(); i++) {
+    clauses->augment(roots->get(i), ~root);
+  }
+
+  assert (getRoots()->size() == 1 && "now there is exactly one root");
+
+  delete roots;
+}
+
 
 /*********************************
  * Create a DAG starting from a fact. Detect cycles and stop if necessary
