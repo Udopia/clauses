@@ -38,6 +38,8 @@ public:
 
   bool isBlockedBy(Literal blocking, Clause* clause);
 
+  Clause* allBut(Literal exclude);
+
 };
 
 } /* namespace Analyzer */

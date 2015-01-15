@@ -66,4 +66,15 @@ bool Clause::isBlockedBy(Literal blocking, Clause* clause) {
   return false;
 }
 
+Clause* Clause::allBut(Literal exclude) {
+  vector<Literal>* vec = new std::vector<Literal>();
+  for (vector<Literal>::iterator it = literals->begin(); it != literals->end(); ++it) {
+    Literal lit = *it;
+    if (lit != exclude) {
+      vec->push_back(lit);
+    }
+  }
+  return new Clause(vec);
+}
+
 } /* namespace Analyzer */
