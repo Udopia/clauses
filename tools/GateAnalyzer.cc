@@ -196,8 +196,12 @@ void GateAnalyzer::analyzeEncoding() {
  */
 void GateAnalyzer::analyzeEncoding2() {
   ClauseList* roots = new ClauseList();
+  D1(fprintf(stderr, "*** %d CLAUSES TOTAL\n", clauses->size());)
 
   ClauseList* units = clauses->getByCriteria(createUnitFilter());
+
+  D1(fprintf(stderr, "*** %d UNITS\n", units->size());)
+
   for (int i = 0; i < units->size(); i++) {
     Clause* unit = units->get(i);
     if (unit->isMarked()) continue;
@@ -209,11 +213,12 @@ void GateAnalyzer::analyzeEncoding2() {
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
   while (remainder->size() != 0) {
+    D1(fprintf(stderr, "*** %d CLAUSES REMAINING\n", remainder->size());)
     // select new root
     Clause* next = remainder->get(0);
     next->setMarked();
     roots->add(next);
-    for (int i = 0; i < next->size(); i++) {
+    for (unsigned int i = 0; i < next->size(); i++) {
       analyzeEncoding(next->get(i));
     }
     delete remainder;
@@ -262,8 +267,6 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
     }
   }
 
-  D1(fprintf(stderr, "\n\n");)
-
   delete literals;
 }
 
@@ -273,14 +276,14 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
  */
 bool GateAnalyzer::classifyEncoding(Literal output) {
   if (projectionContains(var(output))) {
-    D1(fprintf(stderr, "Stop on projection member %s%i\n", sign(output)?"-":"", var(output)+1);)
+    D2(fprintf(stderr, "Stop on projection member %s%i\n", sign(output)?"-":"", var(output)+1);)
     return false;
   } else {
-    D1(fprintf(stderr, "Literal is %s%i\n", sign(output)?"-":"", var(output)+1);)
+    D2(fprintf(stderr, "Literal is %s%i\n", sign(output)?"-":"", var(output)+1);)
   }
 
   if (hasParents(~output)) {
-    D1(fprintf(stderr, "Literal %s%i already has parents\n", sign(~output)?"-":"", var(~output)+1);)
+    D2(fprintf(stderr, "Literal %s%i already has parents\n", sign(~output)?"-":"", var(~output)+1);)
 
     if (this->use_refinement) {
       // try to fix it
@@ -315,7 +318,7 @@ bool GateAnalyzer::classifyEncoding(Literal output) {
   ClauseList* forward = clauses->getClauses(~output)->getByCriteria(createNotFilter(createMarkFilter()));
 
   if (forward->size() == 0) {
-    D1(fprintf(stderr, "Stop on %s%i as there is no forward clause\n", sign(output)?"-":"", var(output)+1);)
+    D2(fprintf(stderr, "Stop on %s%i as there is no forward clause\n", sign(output)?"-":"", var(output)+1);)
     result = false;
   }
   else if (isGate(output, forward, backward)) {
@@ -338,14 +341,14 @@ bool GateAnalyzer::isGate(Literal output, Dark::ClauseList* forward, Dark::Claus
 
   // check if all remaining incoming clauses are back-implications (like in full-equivalence encoding after Tseitin)
   if (!backward->isBlockedBy(output, forward)) {
-    D1(fprintf(stderr, "Gate-Detection Failed\n");)
+    D2(fprintf(stderr, "Gate-Detection Failed\n");)
     return false;
   } else {
-    D1(fprintf(stderr, "Gate-Detection Successful\n");)
+    D2(fprintf(stderr, "Gate-Detection Successful\n");)
   }
 
   if (forward->size() > 0) {
-    D1(fprintf(stderr, "Storing Gate %s%i:\n", sign(output)?"-":"", var(output)+1);
+    D2(fprintf(stderr, "Storing Gate %s%i:\n", sign(output)?"-":"", var(output)+1);
       forward->print(stderr);
       fprintf(stderr, "\n");)
     setAsGate(output, forward);
