@@ -38,7 +38,7 @@ public:
   Clause* get(int i);
   Clause* getFirst();
   Clause* getLast();
-  int size();
+  unsigned int size();
 
 
   iterator begin();
@@ -56,6 +56,7 @@ public:
   void unmarkAll();
 
   void print(FILE* out = stdout);
+  void printDimacs(FILE* out = stdout);
 };
 
 } /* namespace Analyzer */

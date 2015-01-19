@@ -25,6 +25,7 @@ namespace Dark {
 class Cube;
 class Clause;
 class MappedClauseList;
+class Gate;
 
 class GateAnalyzer {
 public:
@@ -56,6 +57,7 @@ public:
   ClauseList* getGateProblem();
   ClauseList* getPrunedGateProblem(Cube* model);
   ClauseList* getAllClauses();
+  ClauseList* getPGClauses();
 
 private:
   MappedClauseList* clauses;
@@ -63,9 +65,10 @@ private:
   // parent-child relationship (children are inputs, parents are outputs)
   map<Literal, set<Literal>*>* children;
   map<Literal, set<Literal>*>* parents;
-  // for each output-Literal the defining clauses
-  map<Literal, ClauseList*>* forwardClauses;
-  map<Literal, ClauseList*>* backwardClauses;
+
+  // store gates by output-variable
+  vector<Gate*>* gates;
+
   Projection* projection;
 
   bool use_refinement = false;
@@ -79,12 +82,9 @@ private:
   void setParentChild(Literal parent, Literal child);
   void unsetParentChild(Literal parent);
 
-  bool classifyEncoding(Literal Literaleral);
-  bool isBlocked(Literal Literaleral, Dark::Clause* incoming_clause, Dark::ClauseList* outgoing);
-  bool isGate(Literal Literaleral, Dark::ClauseList* forward, Dark::ClauseList* backward);
-
-  void setAsGate(Literal output, Dark::ClauseList* definition);
-  bool isMonotonous(Literal Literaleral);
+  bool classifyEncoding(Literal literal);
+  bool isGate(Literal literal, Dark::ClauseList* forward, Dark::ClauseList* backward);
+  bool isMonotonous(Literal literal);
 
   void freeAllContent();
 };

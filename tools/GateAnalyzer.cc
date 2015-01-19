@@ -14,6 +14,7 @@
 
 #include "../filters/ClauseFilters.h"
 
+#include "Gate.h"
 #include "Projection.h"
 #include "GateAnalyzer.h"
 
@@ -28,8 +29,6 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, bool use_refinement) {
   clauses = new MappedClauseList();
   clauses->addAll(clauseList);
 
-  forwardClauses = new map<Literal, ClauseList*>();
-  backwardClauses = new map<Literal, ClauseList*>();
   children = new map<Literal, set<Literal>*>();
   parents = new map<Literal, set<Literal>*>();
   projection = new Projection();
@@ -39,41 +38,31 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, bool use_refinement) {
   for (int i = 0; i < clauses->nVars(); i++) {
     newVar();
   }
+
+  gates = new vector<Gate*>(clauses->nVars(), NULL);
 }
 
 GateAnalyzer::~GateAnalyzer() {
   freeAllContent();
   delete clauses;
-  delete forwardClauses;
-  delete backwardClauses;
   delete children;
   delete parents;
 }
 
 void GateAnalyzer::freeAllContent() {
   clauses->freeClauses();
-  for (map<Literal, ClauseList*>::iterator it = forwardClauses->begin(); it != forwardClauses->end(); ++it) {
-    delete it->second;
-  }
-
-  for (map<Literal, ClauseList*>::iterator it = backwardClauses->begin(); it != backwardClauses->end(); ++it) {
-    delete it->second;
-  }
-
   for (map<Literal, set<Literal>*>::iterator it = children->begin(); it != children->end(); ++it) {
     delete it->second;
   }
-
   for (map<Literal, set<Literal>*>::iterator it = parents->begin(); it != parents->end(); ++it) {
     delete it->second;
   }
 }
 
 ClauseList* GateAnalyzer::getGateClauses(Literal literal) {
-  D2(fprintf(stderr, "Request for Gate Clause of literal %s%i\n", sign(literal)?"-":"", var(literal)+1);
-  (*forwardClauses)[literal]->print();
-  fprintf(stderr, "\n");)
-  return (*forwardClauses)[literal];
+  Gate* gate = (*gates)[var(literal)];
+  if (gate == NULL || gate->getOutput() != literal) return NULL;
+  return gate->getForwardClauses();
 }
 
 int GateAnalyzer::maxVar() {
@@ -83,11 +72,6 @@ int GateAnalyzer::maxVar() {
 
 int GateAnalyzer::newVar() {
   max_var++;
-  D1(fprintf(stderr, "%i\n", max_var);)
-  (*forwardClauses)[mkLit(max_var, false)] = new ClauseList();
-  (*forwardClauses)[mkLit(max_var, true)] = new ClauseList();
-  (*backwardClauses)[mkLit(max_var, false)] = new ClauseList();
-  (*backwardClauses)[mkLit(max_var, true)] = new ClauseList();
   (*children)[mkLit(max_var, false)] = new set<Literal>();
   (*children)[mkLit(max_var, true)] = new set<Literal>();
   (*parents)[mkLit(max_var, false)] = new set<Literal>();
@@ -230,7 +214,7 @@ void GateAnalyzer::analyzeEncoding2() {
   Clause* unit = new Clause(root);
   clauses->add(unit);
   unit->setMarked();
-  for (int i = 0; i < roots->size(); i++) {
+  for (unsigned int i = 0; i < roots->size(); i++) {
     clauses->augment(roots->get(i), ~root);
   }
 
@@ -290,15 +274,13 @@ bool GateAnalyzer::classifyEncoding(Literal output) {
       if (countParents(~output) == 1) {
         Literal parent = *(getParents(~output)->begin());
         D1(fprintf(stderr, "Found one parent %s%i\n\n", sign(parent)?"-":"", var(parent)+1);)
-        if ((*forwardClauses)[parent]->size() == 1) {
+        Gate* gate = (*gates)[var(parent)];
+        if (gate->getForwardClauses()->size() == 1) {
           D1(fprintf(stderr, "########Found one forward clause. Fixing it.\n");)
           unsetParentChild(parent);
-          (*forwardClauses)[parent]->unmarkAll();
-          (*backwardClauses)[parent]->unmarkAll();
-          delete (*forwardClauses)[parent];
-          delete (*backwardClauses)[parent];
-          (*forwardClauses)[parent] = new ClauseList();
-          (*backwardClauses)[parent] = new ClauseList();
+          gate->getForwardClauses()->unmarkAll();
+          gate->getBackwardClauses()->unmarkAll();
+          delete gate;
           if (!classifyEncoding(output)) {
             D1(fprintf(stderr, "######Refinement Failed. Redo old stuff.\n");)
             classifyEncoding(parent);
@@ -349,31 +331,27 @@ bool GateAnalyzer::isGate(Literal output, Dark::ClauseList* forward, Dark::Claus
 
   if (forward->size() > 0) {
     D2(fprintf(stderr, "Storing Gate %s%i:\n", sign(output)?"-":"", var(output)+1);
-      forward->print(stderr);
-      fprintf(stderr, "\n");)
-    setAsGate(output, forward);
-  }
+    forward->print(stderr);
+    fprintf(stderr, "\n");)
 
-  for (ClauseList::iterator it = backward->begin(); it != backward->end(); it++) {
-    Dark::Clause* clause = *it;
-    (*backwardClauses)[output]->add(clause);
-    clause->setMarked();
+    for (ClauseList::iterator it = forward->begin(); it != forward->end(); it++) {
+      (*it)->setMarked();
+    }
+
+    for (ClauseList::iterator it = backward->begin(); it != backward->end(); it++) {
+      (*it)->setMarked();
+    }
+
+    Gate* gate = new Gate(output, forward, backward);
+    (*gates)[var(output)] = gate;
+
+    vector<Literal>* inputs = gate->getInputs();
+    for (std::vector<Literal>::iterator lit = inputs->begin(); lit != inputs->end(); ++lit) {
+      setParentChild(output, *lit);
+    }
   }
 
   return true;
-}
-
-void GateAnalyzer::setAsGate(Literal output, Dark::ClauseList* definition) {
-  for (ClauseList::iterator it = definition->begin(); it != definition->end(); it++) {
-    Dark::Clause* clause = *it;
-    (*forwardClauses)[output]->add(clause);
-    clause->setMarked();
-
-    // set parent-child relationship
-    for (std::vector<Literal>::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
-      if (*lit != ~output) setParentChild(output, *lit);
-    }
-  }
 }
 
 bool GateAnalyzer::isMonotonous(Literal literal) {
@@ -409,6 +387,10 @@ bool GateAnalyzer::projectionContains(Var var) {
 }
 
 ClauseList* GateAnalyzer::getAllClauses() {
+  return clauses;
+}
+
+ClauseList* GateAnalyzer::getPGClauses() {
   return clauses;
 }
 
@@ -451,11 +433,12 @@ ClauseList* GateAnalyzer::getPrunedGateProblem(Cube* inputModel) {
     Literal literal = literals->get(i);
     D2(fprintf(stderr, "Literal is %s%i\n", sign(~literal)?"-":"", var(~literal)+1);)
 
-    if (forwardClauses->count(literal) > 0) {
+    Gate* gate = (*gates)[var(literal)];
+    if (gate != NULL && gate->getOutput() == literal) {
       D2(fprintf(stderr, "Found Gate Clauses\n");)
       if (model->satisfies(literal) || !isMonotonous(literal)) {
         D2(fprintf(stderr, "Adding them\n");)
-        list->addAll((*forwardClauses)[literal]);
+        list->addAll(gate->getForwardClauses());
         set<Literal>* children = getChildren(literal);
         for (set<Literal>::iterator child = children->begin(); child != children->end(); child++) {
           if (!visited[toInt(*child)]) {
@@ -469,8 +452,6 @@ ClauseList* GateAnalyzer::getPrunedGateProblem(Cube* inputModel) {
         D1(prunedLits->insert(literal);
         printf("################ PRUNING AT %s%i\n", sign(literal) ? "-" : "", var(literal)+1);)
       }
-    } else if (getChildren(literal) != NULL && getChildren(literal)->size() > 0) {
-      fprintf(stderr, "*!*!*!*!*!* Inconsistent Data-Structures *!*!*!*!*!*\n");
     }
   }
   D1(fprintf(stderr, "Pruned at literals: ");

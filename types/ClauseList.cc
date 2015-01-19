@@ -58,7 +58,7 @@ Clause* ClauseList::getLast() {
   return (*clauses)[clauses->size()-1];
 }
 
-int ClauseList::size() {
+unsigned int ClauseList::size() {
   return (int)clauses->size();
 }
 
@@ -148,5 +148,17 @@ void ClauseList::print(FILE* out) {
     }
   }
 }
+
+void ClauseList::printDimacs(FILE* out) {
+  for (unsigned int i = 0; i < clauses->size(); ++i) {
+    Dark::Clause* clause = (*clauses)[i];
+    if (clause != NULL) {
+      clause->print(out);
+    } else {
+      fprintf(out, "NULL; ");
+    }
+  }
+}
+
 
 } /* namespace Analyzer */
