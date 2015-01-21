@@ -49,6 +49,23 @@ void MappedClauseList::add(Clause* clause) {
 void MappedClauseList::augment(Clause* clause, Literal lit) {
   clause->add(lit);
 
+  // create missing clause-list for both literals
+  if (clauseMap->count(lit) <= 0) {
+    (*clauseMap)[lit] = new Dark::ClauseList();
+  }
+  if (clauseMap->count(~lit) <= 0) {
+    (*clauseMap)[~lit] = new Dark::ClauseList();
+  }
+
+  if (maxVar < var(lit)) {
+    maxVar = var(lit);
+  }
+
+  // update occurence-list
+  (*clauseMap)[lit]->add(clause);
+}
+
+void MappedClauseList::augmentAll(Literal lit) {
   // create missing clause-list for both Literalerals
   if (clauseMap->count(lit) <= 0) {
     (*clauseMap)[lit] = new Dark::ClauseList();
@@ -61,9 +78,11 @@ void MappedClauseList::augment(Clause* clause, Literal lit) {
     maxVar = var(lit);
   }
 
-  // fetch and update clause-list
-  Dark::ClauseList* clauseList = (*clauseMap)[lit];
-  clauseList->add(clause);
+  for (iterator it = begin(); it != end(); it++) {
+    Clause* cl = *it;
+    cl->add(lit);
+    (*clauseMap)[lit]->add(cl);
+  }
 }
 
 ClauseList* MappedClauseList::getClauses(Literal literal) {

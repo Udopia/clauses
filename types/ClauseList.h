@@ -52,7 +52,9 @@ public:
 
   ClauseList* getByCriteria(unique_ptr<ClauseFilter> filter);
   ClauseList* removeByCriteria(unique_ptr<ClauseFilter> filter);
+  void dumpByCriteria(unique_ptr<ClauseFilter> filter);
 
+  void markAll();
   void unmarkAll();
 
   void print(FILE* out = stdout);

@@ -27,31 +27,34 @@ class Clause;
 class MappedClauseList;
 class Gate;
 
+enum RootSelectionMethod {
+  FIRST_CLAUSE, MAX_ID, MIN_OCCURENCE
+};
+
 class GateAnalyzer {
 public:
   GateAnalyzer(ClauseList* clauseList, bool use_refinement = false);
   virtual ~GateAnalyzer();
 
   void analyzeEncoding();
-  void analyzeEncoding2();
+  void analyzeEncoding2(RootSelectionMethod method, int tries);
 
   /**
    * Access Gate-Structure
    */
   ClauseList* getRoots();
-  set<Literal>* getChildren(Literal parent);
-  int countChildren(Literal parent);
-  bool hasChildren(Literal parent);
-  set<Literal>* getParents(Literal child);
+  Gate* getGate(Literal output);
+  Gate* getOrCreateGate(Literal output);
+  vector<Literal>* getInputs(Literal parent);
+  int countInputs(Literal parent);
+  bool hasInputs(Literal parent);
+  vector<Literal>* getParents(Literal child);
   int countParents(Literal child);
   bool hasParents(Literal child);
   ClauseList* getGateClauses(Literal Literaleral);
-  ClauseList* getNotMarkedClauses();
 
   void setProjection(Projection* projection);
-  void removeProjection();
   bool projectionContains(Var var);
-
 
   ClauseList* getSideProblem();
   ClauseList* getGateProblem();
@@ -62,9 +65,7 @@ public:
 private:
   MappedClauseList* clauses;
 
-  // parent-child relationship (children are inputs, parents are outputs)
-  map<Literal, set<Literal>*>* children;
-  map<Literal, set<Literal>*>* parents;
+  map<Literal, vector<Literal>*>* parents;
 
   // store gates by output-variable
   vector<Gate*>* gates;
@@ -79,12 +80,13 @@ private:
 
   void analyzeEncoding(Literal root);
 
-  void setParentChild(Literal parent, Literal child);
-  void unsetParentChild(Literal parent);
+  void setParent(Literal parent, Literal child);
+  void unsetParent(Literal parent);
 
   bool classifyEncoding(Literal literal);
-  bool isGate(Literal literal, Dark::ClauseList* forward, Dark::ClauseList* backward);
-  bool isMonotonous(Literal literal);
+  bool isGate(Literal literal);
+
+  Clause* getNextClause(ClauseList* list, RootSelectionMethod method);
 
   void freeAllContent();
 };

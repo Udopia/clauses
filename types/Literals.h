@@ -60,6 +60,7 @@ public:
 
   void print(FILE* out = stdout);
   void println(FILE* out = stdout);
+  void printDimacs(FILE* out = stdout);
 
   std::string* toString();
 

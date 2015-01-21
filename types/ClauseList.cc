@@ -41,8 +41,8 @@ void ClauseList::add(Clause* clause) {
 }
 
 void ClauseList::addAll(ClauseList* list) {
-  for(int i = 0; i < list->size(); i++) {
-    this->add(list->get(i));
+  for(ClauseList::iterator it = list->begin(); it != list->end(); it++) {
+    this->add(*it);
   }
 }
 
@@ -86,9 +86,9 @@ bool ClauseList::contains(Clause* clause) {
 
 ClauseList* ClauseList::getByCriteria(unique_ptr<ClauseFilter> filter) {
   ClauseList* result = new ClauseList();
-  for (unsigned int i = 0; i < clauses->size(); i++) {
-    if (filter->meetCriteria(this->get(i))) {
-      result->add(get(i));
+  for (vector<Clause*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+    if (filter->meetCriteria(*it)) {
+      result->add(*it);
     }
   }
   return result;
@@ -97,16 +97,27 @@ ClauseList* ClauseList::getByCriteria(unique_ptr<ClauseFilter> filter) {
 ClauseList* ClauseList::removeByCriteria(unique_ptr<ClauseFilter> filter) {
   ClauseList* result = new ClauseList();
   vector<Clause*>* nextClauses = new vector<Clause*>();
-  for (unsigned int i = 0; i < clauses->size(); i++) {
-    if (filter->meetCriteria(this->get(i))) {
-      result->add(get(i));
+  for (vector<Clause*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+    if (filter->meetCriteria(*it)) {
+      result->add(*it);
     } else {
-      nextClauses->push_back(get(i));
+      nextClauses->push_back(*it);
     }
   }
   delete clauses;
   clauses = nextClauses;
   return result;
+}
+
+void ClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
+  vector<Clause*>* nextClauses = new vector<Clause*>();
+  for (vector<Clause*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+    if (!filter->meetCriteria(*it)) {
+      nextClauses->push_back(*it);
+    }
+  }
+  delete clauses;
+  clauses = nextClauses;
 }
 
 bool ClauseList::isBlockedBy(Literal lit, Clause* clause) {
@@ -127,6 +138,12 @@ bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
     }
   }
   return true;
+}
+
+void ClauseList::markAll() {
+  for (unsigned int i = 0; i < clauses->size(); i++) {
+    this->get(i)->setMarked();
+  }
 }
 
 void ClauseList::unmarkAll() {
@@ -153,9 +170,9 @@ void ClauseList::printDimacs(FILE* out) {
   for (unsigned int i = 0; i < clauses->size(); ++i) {
     Dark::Clause* clause = (*clauses)[i];
     if (clause != NULL) {
-      clause->print(out);
+      clause->printDimacs(out);
     } else {
-      fprintf(out, "NULL; ");
+      fprintf(out, "0");
     }
   }
 }

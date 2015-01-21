@@ -27,7 +27,10 @@ public:
   virtual ~MappedClauseList();
 
   void add(Clause* clause);
+
   void augment(Clause* clause, Literal lit);
+  void augmentAll(Literal lit);
+
   ClauseList* getClauses(Literal literal);
   ClauseList* getFiltered(Literal literal, bool stripVisited, bool stripBackpointers);
 

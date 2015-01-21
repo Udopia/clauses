@@ -16,6 +16,10 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
   this->forward = forward;
   this->backward = backward;
 
+  //printf("New Gate with output %s%i\n", sign(output)?"-":"", var(output)+1);
+  //forward->print();
+  //printf("\n");
+
   this->inputs = new vector<Literal>();
   for (ClauseList::iterator it = forward->begin(); it != forward->end(); it++) {
     Dark::Clause* clause = *it;
@@ -33,6 +37,13 @@ Gate::~Gate() {
 
 Literal Gate::getOutput() {
   return output;
+}
+
+void Gate::addForwardClause(Clause* fwd) {
+  forward->add(fwd);
+  for (std::vector<Literal>::iterator lit = fwd->begin(); lit != fwd->end(); ++lit) {
+    if (*lit != ~output) inputs->push_back(*lit);
+  }
 }
 
 ClauseList* Gate::getForwardClauses() {

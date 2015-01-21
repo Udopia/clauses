@@ -162,6 +162,13 @@ void Literals::println(FILE* out) {
   fprintf(out, "\n");
 }
 
+void Literals::printDimacs(FILE* out) {
+  for (iterator it = literals->begin(); it != literals->end(); ++it) {
+    fprintf(out, "%s%i ", sign(*it) ? "-" : "", 1+var(*it));
+  }
+  fprintf(out, "0\n");
+}
+
 std::string* Literals::toString() {
   std::string* val = new std::string();
   val->append("(");
@@ -173,7 +180,6 @@ std::string* Literals::toString() {
   val->append(")");
   return val;
 }
-
 
 Literals* Literals::allBut(Literal exclude) {
   std::vector<Literal>* vec = new std::vector<Literal>();
