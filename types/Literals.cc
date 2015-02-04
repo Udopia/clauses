@@ -52,10 +52,13 @@ void Literals::add(Literal lit) {
 }
 
 void Literals::addAll(Literals* clause) {
-  for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); it++) {
-    add(*it);
-  }
+  literals->insert(literals->end(), clause->begin(), clause->end());
 }
+
+void Literals::addAll(std::vector<Literal>* clause) {
+  literals->insert(literals->end(), clause->begin(), clause->end());
+}
+
 
 Literal Literals::removeLast() {
   Literal lit = this->getLast();

@@ -15,6 +15,7 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
   this->output = output;
   this->forward = forward;
   this->backward = backward;
+  this->width = new map<Literal,int>();
 
   //printf("New Gate with output %s%i\n", sign(output)?"-":"", var(output)+1);
   //forward->print();
@@ -24,7 +25,14 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
   for (ClauseList::iterator it = forward->begin(); it != forward->end(); it++) {
     Dark::Clause* clause = *it;
     for (std::vector<Literal>::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
-      if (*lit != ~output) inputs->push_back(*lit);
+      if (*lit != ~output) {
+        inputs->push_back(*lit);
+        if (width->count(*lit) == 0) {
+          (*width)[*lit] = clause->size();
+        } else if ((*width)[*lit] < (int)clause->size()) {
+          (*width)[*lit] = clause->size();
+        }
+      }
     }
   }
 }
@@ -33,6 +41,7 @@ Gate::~Gate() {
   delete forward;
   delete backward;
   delete inputs;
+  delete width;
 }
 
 Literal Gate::getOutput() {
@@ -42,7 +51,14 @@ Literal Gate::getOutput() {
 void Gate::addForwardClause(Clause* fwd) {
   forward->add(fwd);
   for (std::vector<Literal>::iterator lit = fwd->begin(); lit != fwd->end(); ++lit) {
-    if (*lit != ~output) inputs->push_back(*lit);
+    if (*lit != ~output) {
+      inputs->push_back(*lit);
+      if (width->count(*lit) == 0) {
+        (*width)[*lit] = fwd->size();
+      } else if ((*width)[*lit] < (int)fwd->size()) {
+        (*width)[*lit] = fwd->size();
+      }
+    }
   }
 }
 
@@ -65,6 +81,17 @@ bool Gate::isMonotonous() {
     }
   }
   return true;
+}
+
+bool Gate::isMonotonousIn(Literal literal) {
+  for (vector<Literal>::iterator inp = inputs->begin(); inp != inputs->end(); inp++) {
+    if (*inp == ~literal) return false;
+  }
+  return true;
+}
+
+int Gate::countAlternatives(Literal input) {
+  return (*width)[input];
 }
 
 }

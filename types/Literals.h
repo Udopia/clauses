@@ -39,6 +39,7 @@ public:
 
   void add(Literal lit);
   void addAll(Literals* clause);
+  void addAll(std::vector<Literal>* clause);
   bool remove(Literal);
   Literal removeLast();
   void removeAll(Literals* clause);

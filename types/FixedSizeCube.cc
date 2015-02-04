@@ -40,6 +40,12 @@ void FixedSizeCube::add(Literal lit) {
   (*care)[var(lit)] = true;
 }
 
+void FixedSizeCube::addAll(Literals* fsc) {
+  for (std::vector<Literal>::iterator it = fsc->begin(); it != fsc->end(); it++) {
+    add(*it);
+  }
+}
+
 bool FixedSizeCube::satisfies(Literal lit) {
     return (*care)[var(lit)] && (*signs)[var(lit)] == sign(lit);
 }

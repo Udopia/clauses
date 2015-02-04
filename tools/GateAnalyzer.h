@@ -28,7 +28,7 @@ class MappedClauseList;
 class Gate;
 
 enum RootSelectionMethod {
-  FIRST_CLAUSE, MAX_ID, MIN_OCCURENCE
+  FIRST_CLAUSE, MAX_ID, MIN_OCCURENCE, MONOTONOUS
 };
 
 class GateAnalyzer {
@@ -36,8 +36,7 @@ public:
   GateAnalyzer(ClauseList* clauseList, bool use_refinement = false);
   virtual ~GateAnalyzer();
 
-  void analyzeEncoding();
-  void analyzeEncoding2(RootSelectionMethod method, int tries);
+  void analyzeEncoding(RootSelectionMethod method, int tries);
 
   /**
    * Access Gate-Structure
@@ -60,10 +59,16 @@ public:
   ClauseList* getGateProblem();
   ClauseList* getPrunedGateProblem(Cube* model);
   ClauseList* getAllClauses();
+  ClauseList* getPGClauses(Literal root, bool monotonous);
   ClauseList* getPGClauses();
+
+  vector<vector<Literal>*>* findConfluentOutputs();
+  vector<int>* getRecursiveGateOrWidths();
+  void augmentClauses(int minWidth = 0);
 
 private:
   MappedClauseList* clauses;
+  vector<bool>* visited;
 
   map<Literal, vector<Literal>*>* parents;
 
@@ -85,6 +90,7 @@ private:
 
   bool classifyEncoding(Literal literal);
   bool isGate(Literal literal);
+  bool isFullGate(Literal literal) { return false; }
 
   Clause* getNextClause(ClauseList* list, RootSelectionMethod method);
 

@@ -9,6 +9,7 @@
 #define CLAUSES_TOOLS_GATE_H_
 
 #include <vector>
+#include <map>
 
 #include "../types/Literal.h"
 
@@ -32,12 +33,16 @@ public:
 
   vector<Literal>* getInputs();
   bool isMonotonous();
+  bool isMonotonousIn(Literal literal);
+
+  int countAlternatives(Literal input);
 
 private:
   Literal output;
   ClauseList* forward;
   ClauseList* backward;
 
+  map<Literal,int>* width;
   vector<Literal>* inputs;
 
 };

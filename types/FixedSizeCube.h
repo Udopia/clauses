@@ -24,6 +24,7 @@ public:
   virtual ~FixedSizeCube();
 
   void add(Literal lit);
+  void addAll(Literals* fsc);
 
   bool satisfies(Literal literal);
   bool satisfies(Clause* clause);
