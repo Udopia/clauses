@@ -455,17 +455,17 @@ void GateAnalyzer::augmentClauses(int minWidth) {
     ClauseList* fwd = gate->getForwardClauses();
     ClauseList* bwd = gate->getBackwardClauses();
     vector<Literal>* deps = (*dependencies)[toInt(literal)];
-    if (deps > 0 && (*widths)[toInt(literal)] >= minWidth) {
+    if (deps->size() > 0 && (*widths)[toInt(literal)] >= minWidth) {
       for (ClauseList::iterator it = fwd->begin(); it != fwd->end(); it++) {
         Clause* cl = *it;
         cl->addAll(deps);
         nAugmentedClauses++;
       }
-      for (ClauseList::iterator it = bwd->begin(); it != bwd->end(); it++) {
-        Clause* cl = *it;
-        cl->addAll(deps);
-        nAugmentedClauses++;
-      }
+//      for (ClauseList::iterator it = bwd->begin(); it != bwd->end(); it++) {
+//        Clause* cl = *it;
+//        cl->addAll(deps);
+//        nAugmentedClauses++;
+//      }
     }
   }
 
@@ -481,6 +481,8 @@ vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
   literals->push_back(root);
   (*dependencies)[toInt(root)] = new vector<Literal>();
 
+  vector<Literal>* temp = new vector<Literal>(maxVar());
+
   while (!literals->empty()) {
     Literal literal = literals->front();
     literals->pop_front();
@@ -492,7 +494,6 @@ vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
     // add the intersection of all parents' dependencies as local dependencies
     vector<Literal>* parents = getParents(literal);
 
-    vector<Literal>* temp = new vector<Literal>(maxVar());
     if (parents->size() > 0) {
       vector<Literal>* deps = new vector<Literal>();
 
@@ -501,29 +502,13 @@ vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
           (*dependencies)[toInt((*parents)[0])]->begin(),
           (*dependencies)[toInt((*parents)[0])]->end());
 
-//      printf("Parent is %s%i: ", sign((*parents)[0])?"-":"", var((*parents)[0])+1);
-//      printf("Current Dependencies for Literal %s%i: ", sign(literal)?"-":"", var(literal)+1);
-//      Clause* cl = new Clause(deps);
-//      cl->println();
-
       for (vector<Literal>::iterator p = parents->begin() + 1; p != parents->end(); p++) {
         temp->clear();
         vector<Literal>* pdeps = (*dependencies)[toInt(*p)];
 
-//        printf("Parent is %s%i: ", sign(*p)?"-":"", var(*p)+1);
-//        printf("Intersected Dependencies for Literal %s%i: ", sign(literal)?"-":"", var(literal)+1);
-//        cl = new Clause(pdeps);
-//        cl->println();
-
-
         set_intersection(pdeps->begin(), pdeps->end(),
             deps->begin(), deps->end(),
             std::back_inserter(*temp));
-
-//        printf("Parent is %s%i: ", sign(*p)?"-":"", var(*p)+1);
-//        printf("Intersection Result:");
-//        cl = new Clause(temp);
-//        cl->println();
 
         deps->clear();
         deps->insert(deps->begin(), temp->begin(), temp->end());
@@ -531,10 +516,6 @@ vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
 
       sort(deps->begin(), deps->end());
       (*dependencies)[toInt(literal)] = deps;
-
-//      printf("Additional Dependencies for Literal %s%i: ", sign(literal)?"-":"", var(literal)+1);
-//      cl = new Clause(deps);
-//      cl->println();
     }
 
     // only add inputs, that have all parents visited
