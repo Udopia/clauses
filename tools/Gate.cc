@@ -16,6 +16,7 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
   this->forward = forward;
   this->backward = backward;
   this->width = new map<Literal,int>();
+  this->nonMonotonousParent = false;
 
   //printf("New Gate with output %s%i\n", sign(output)?"-":"", var(output)+1);
   //forward->print();
@@ -88,6 +89,14 @@ bool Gate::isMonotonousIn(Literal literal) {
     if (*inp == ~literal) return false;
   }
   return true;
+}
+
+bool Gate::hasNonMonotonousParent() {
+  return nonMonotonousParent;
+}
+
+void Gate::setHasNonMonotonousParent() {
+  this->nonMonotonousParent = true;
 }
 
 int Gate::countAlternatives(Literal input) {

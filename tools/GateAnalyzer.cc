@@ -29,7 +29,7 @@
 
 namespace Dark {
 
-GateAnalyzer::GateAnalyzer(ClauseList* clauseList, bool use_refinement) {
+GateAnalyzer::GateAnalyzer(ClauseList* clauseList, bool full_eq_detection, bool use_refinement) {
   clauses = new MappedClauseList();
   clauses->addAll(clauseList);
 
@@ -37,6 +37,7 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, bool use_refinement) {
   projection = new Projection();
 
   this->use_refinement = use_refinement;
+  this->full_eq_detection = full_eq_detection;
 
   gates = new vector<Gate*>();
 
@@ -256,93 +257,99 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
 
   // while there are literals in the queue we check for children and add them to the queue
   for (unsigned int i_lit = 0; i_lit < literals->size(); i_lit++) {
-    Literal lit = (*literals)[i_lit];
+    Literal output = (*literals)[i_lit];
 
     // Stop on projection (forced inputs)
-    if (projectionContains(var(lit))) {
+    if (projectionContains(var(output))) {
       continue;
     }
 
-    // Stop on possible emerging cycles
-    if (hasParents(~lit)) {
-      if (isFullGate(lit)) {
-        // blocked pairs S(x) S(-x)
-        // [test if vars(S(x)) = vars(S(-x))]
-        // test if lits(S(x)) = -lits(S(-x))
-        // for input-configurations x is implied
-      }
+    Gate* gate = NULL;
 
-      // We can try to fix it
-      if (this->use_refinement && countParents(~lit) == 1) {
-        Literal parent = *(getParents(~lit)->begin());
-        Gate* gate = (*gates)[var(parent)];
-        if (gate->getForwardClauses()->size() == 1) {
-          D1(fprintf(stderr, "########Found one forward clause. Fixing it.\n");)
-          unsetParent(parent);
-          gate->getForwardClauses()->unmarkAll();
-          gate->getBackwardClauses()->unmarkAll();
-          delete gate;
-          (*gates)[var(parent)] = NULL;
-          if (!isGate(lit)) {
-            D1(fprintf(stderr, "######Refinement Failed. Redo old stuff.\n");)
-            isGate(parent);
-            continue;
-          }
+    ClauseList* fwd = clauses->getClauses(~output)->getByCriteria(createNoMarkFilter());
+    ClauseList* bwd = clauses->getClauses(output)->getByCriteria(createNoMarkFilter());
+
+    D1(
+      fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);
+      fwd->print(stderr);
+      bwd->print(stderr);
+      fprintf(stderr, "\n");
+    )
+
+    if (fwd->size() > 0) {
+      if (isMonotonousInput(output)) {
+        D1(fprintf(stderr, "Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
+        if (bwd->isBlockedBy(output, fwd)) {
+          D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
+          gate = defGate(output, fwd, bwd);
         }
-      } else {
-        continue;
+      }
+      else { // non-monotonous
+        D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
+        if (this->full_eq_detection && bwd->definesEquivalence(output, fwd)) {
+          D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
+          gate = defGate(output, fwd, bwd);
+          gate->setHasNonMonotonousParent();
+        }
+  //      else if (this->use_refinement && countParents(~output) == 1) { // We can try to fix it
+  //        Literal parent = *(getParents(~output)->begin());
+  //        Gate* gate = (*gates)[var(parent)];
+  //        if (gate->getForwardClauses()->size() == 1) {
+  //          undefGate(gate);
+  //
+  //          if (!isGate(output)) {
+  //            isGate(parent);
+  //            continue;
+  //          }
+  //        }
+  //      }
       }
     }
 
-    if (isGate(lit)) {
-      // Append inputs of the newly discovered gate to the queue
-      vector<Literal>* children = getInputs(lit);
-      literals->insert(literals->end(), children->begin(), children->end());
+    if (gate != NULL) {
+      literals->insert(literals->end(), gate->getInputs()->begin(), gate->getInputs()->end());
+    }
+    else {
+      delete bwd;
+      delete fwd;
     }
   }
 
   delete literals;
 }
 
-/*******
- * Locally analyze encoding of current literal and mark clauses as visited if a gate was detected.
- * If we have full equivalence encoding on literal it marks the back-pointers as such.
- ***/
-bool GateAnalyzer::isGate(Literal output) {
-  D1(fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);)
-
-  ClauseList* backward = clauses->getClauses(output)->getByCriteria(createNotFilter(createMarkFilter()));
-  ClauseList* forward = clauses->getClauses(~output)->getByCriteria(createNotFilter(createMarkFilter()));
-
-
-  D2(fprintf(stderr, "Checking if ClauseList [");
-    backward->print(stderr);
-    fprintf(stderr, "] is blocked by [");
-    forward->print(stderr);
-    printf(stderr, "]\n");)
-
-  if (forward->size() == 0) {
-    D2(fprintf(stderr, "Stop on %s%i as there is no forward clause\n", sign(output)?"-":"", var(output)+1);)
-    delete backward;
-    delete forward;
-    return false;
-  }
-
-  // check if all remaining incoming clauses are back-implications (like in full-equivalence encoding after Tseitin)
-  if (!backward->isBlockedBy(output, forward)) {
-    delete backward;
-    delete forward;
-    return false;
-  }
-
-  forward->markAll();
-  backward->markAll();
-  Gate* gate = new Gate(output, forward, backward);
+Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
+  fwd->markAll();
+  bwd->markAll();
+  Gate* gate = new Gate(output, fwd, bwd);
   (*gates)[var(output)] = gate;
 
   vector<Literal>* inputs = gate->getInputs();
   for (std::vector<Literal>::iterator lit = inputs->begin(); lit != inputs->end(); ++lit) {
     setParent(output, *lit);
+  }
+
+  return gate;
+}
+
+void GateAnalyzer::undefGate(Gate* gate) {
+  gate->getForwardClauses()->unmarkAll();
+  gate->getBackwardClauses()->unmarkAll();
+  delete gate;
+  (*gates)[var(gate->getOutput())] = NULL;
+  unsetParent(gate->getOutput());
+}
+
+bool GateAnalyzer::isMonotonousInput(Literal output) {
+  if (hasParents(~output)) {
+    return false;
+  }
+
+  vector<Literal>* parents = getParents(output);
+  for (vector<Literal>::iterator it = parents->begin(); it != parents->end(); it++) {
+    if (getGate(*it)->hasNonMonotonousParent()) {
+      return false;
+    }
   }
 
   return true;
@@ -461,11 +468,11 @@ void GateAnalyzer::augmentClauses(int minWidth) {
         cl->addAll(deps);
         nAugmentedClauses++;
       }
-//      for (ClauseList::iterator it = bwd->begin(); it != bwd->end(); it++) {
-//        Clause* cl = *it;
-//        cl->addAll(deps);
-//        nAugmentedClauses++;
-//      }
+      for (ClauseList::iterator it = bwd->begin(); it != bwd->end(); it++) {
+        Clause* cl = *it;
+        cl->addAll(deps);
+        nAugmentedClauses++;
+      }
     }
   }
 

@@ -8,6 +8,7 @@
 #include "ClauseList.h"
 #include "Literal.h"
 #include "stdio.h"
+#include "limits.h"
 #include <cstddef>
 #include <memory>
 
@@ -74,7 +75,7 @@ ClauseList::iterator ClauseList::end() {
  * Comparative Methods
  */
 Clause* ClauseList::find(Clause* clause) {
-  for (int i = 0; i < size(); ++i) {
+  for (unsigned int i = 0; i < size(); ++i) {
     if (get(i)->equals(clause)) return get(i);
   }
   return NULL;
@@ -138,6 +139,66 @@ bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
     }
   }
   return true;
+}
+
+bool ClauseList::definesEquivalence(Literal lit, ClauseList* other) {
+//  fprintf(stderr, "full detection:");
+  if (!isBlockedBy(lit, other)) {
+//    fprintf(stderr, "!blocked\n");
+    return false;
+  }
+  Clause* thisLits = this->getUnionOfLiterals();
+  Clause* otherLits = other->getUnionOfLiterals();
+  otherLits->inlineNegate();
+  if (!thisLits->equals(otherLits)) {
+//    fprintf(stderr, "!samevars\n");
+    return false;
+  }
+
+//  fprintf(stderr, "This Size: %i lits:%i; min/max: %i/%i\n", this->size(), thisLits->size(), this->minClauseSize(), this->maxClauseSize());
+//  fprintf(stderr, "Other Size: %i lits:%i; min/max: %i/%i\ņ", other->size(), otherLits->size(), other->minClauseSize(), other->maxClauseSize());
+
+  // fast and-/or-detection
+  if (this->size() == 1 && other->size() == otherLits->size()-1) {
+//    fprintf(stderr, "!sizes fit\n");
+    return other->maxClauseSize() == other->minClauseSize() && other->maxClauseSize() == 2;
+  }
+  if (other->size() == 1 && this->size() == thisLits->size()-1) {
+//    fprintf(stderr, "!sizes fit\n");
+    return this->maxClauseSize() == this->minClauseSize() && this->maxClauseSize() == 2;
+  }
+
+  // TODO: equivalence detection
+//  fprintf(stderr, "!hit\n");
+  return false;
+}
+
+Clause* ClauseList::getUnionOfLiterals() {
+  Clause* clause = new Clause();
+  for (ClauseList::iterator it = this->begin(); it != this->end(); it++) {
+    for (Clause::iterator it2 = (*it)->begin(); it2 != (*it)->end(); it2++) {
+      if (!clause->contains(*it2)) {
+        clause->add(*it2);
+      }
+    }
+  }
+  return clause;
+}
+
+unsigned int ClauseList::minClauseSize() {
+  unsigned int min = INT_MAX;
+  for (ClauseList::iterator it = this->begin(); it != this->end(); it++) {
+    if (min > (*it)->size()) min = (*it)->size();
+  }
+  return min;
+}
+
+unsigned int ClauseList::maxClauseSize() {
+  unsigned int max = 0;
+  for (ClauseList::iterator it = this->begin(); it != this->end(); it++) {
+    if (max < (*it)->size()) max = (*it)->size();
+  }
+  return max;
 }
 
 void ClauseList::markAll() {

@@ -50,6 +50,13 @@ public:
   bool isBlockedBy(Literal lit, Clause* clause);
   bool isBlockedBy(Literal lit, ClauseList* list);
 
+  bool definesEquivalence(Literal lit, ClauseList* list);
+
+  Clause* getUnionOfLiterals();
+
+  unsigned int minClauseSize();
+  unsigned int maxClauseSize();
+
   ClauseList* getByCriteria(unique_ptr<ClauseFilter> filter);
   ClauseList* removeByCriteria(unique_ptr<ClauseFilter> filter);
   void dumpByCriteria(unique_ptr<ClauseFilter> filter);

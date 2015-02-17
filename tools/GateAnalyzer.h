@@ -33,7 +33,7 @@ enum RootSelectionMethod {
 
 class GateAnalyzer {
 public:
-  GateAnalyzer(ClauseList* clauseList, bool use_refinement = false);
+  GateAnalyzer(ClauseList* clauseList, bool full_eq_detection = false, bool use_refinement = false);
   virtual ~GateAnalyzer();
 
   void analyzeEncoding(RootSelectionMethod method, int tries);
@@ -78,6 +78,7 @@ private:
   Projection* projection;
 
   bool use_refinement = false;
+  bool full_eq_detection = false;
   int max_var = -1;
 
   int maxVar();
@@ -88,9 +89,12 @@ private:
   void setParent(Literal parent, Literal child);
   void unsetParent(Literal parent);
 
+  Gate* defGate(Literal output, ClauseList* fwd, ClauseList* bwd);
+  void undefGate(Gate* gate);
+
   bool classifyEncoding(Literal literal);
-  bool isGate(Literal literal);
-  bool isFullGate(Literal literal) { return false; }
+
+  bool isMonotonousInput(Literal output);
 
   Clause* getNextClause(ClauseList* list, RootSelectionMethod method);
 

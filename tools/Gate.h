@@ -35,12 +35,17 @@ public:
   bool isMonotonous();
   bool isMonotonousIn(Literal literal);
 
+  bool hasNonMonotonousParent();
+  void setHasNonMonotonousParent();
+
   int countAlternatives(Literal input);
 
 private:
   Literal output;
   ClauseList* forward;
   ClauseList* backward;
+
+  bool nonMonotonousParent;
 
   map<Literal,int>* width;
   vector<Literal>* inputs;

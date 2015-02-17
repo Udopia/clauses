@@ -35,6 +35,7 @@ public:
   bool isMarked();
 
   Cube* negate();
+  void inlineNegate();
 
   bool isBlockedBy(Literal blocking, Clause* clause);
 

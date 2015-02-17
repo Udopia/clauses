@@ -56,6 +56,12 @@ Cube* Clause::negate() {
   return cube;
 }
 
+void Clause::inlineNegate() {
+  for (unsigned int i = 0; i < size(); i++) {
+    (*literals)[i] = ~(*literals)[i];
+  }
+}
+
 bool Clause::isBlockedBy(Literal blocking, Clause* clause) {
   for (Clause::iterator it = clause->begin(); it != clause->end(); ++it) {
     Literal& lit = *it;

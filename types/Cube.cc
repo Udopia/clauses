@@ -96,7 +96,7 @@ bool Cube::falsifies(Clause* clause) {
 
 ClauseList* Cube::checkSatisfied(ClauseList* list) {
   ClauseList* notSatisfied = new ClauseList();
-  for (int i = 0; i < list->size(); i++) {
+  for (unsigned int i = 0; i < list->size(); i++) {
     Clause* clause = list->get(i);
     if (!this->satisfies(clause)) {
       notSatisfied->add(clause);
