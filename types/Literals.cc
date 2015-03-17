@@ -6,22 +6,26 @@
  */
 
 #include "Literals.h"
+#include "ClauseList.h"
 
 namespace Dark {
 
 Literals::Literals() {
   literals = new std::vector<Literal>();
+  mark = false;
 }
 
 Literals::Literals(Literal lit) {
   literals = new std::vector<Literal>();
   this->add(lit);
+  mark = false;
 }
 
 Literals::Literals(Literal lit1, Literal lit2) {
   literals = new std::vector<Literal>();
   this->add(lit1);
   this->add(lit2);
+  mark = false;
 }
 
 Literals::Literals(Literal lit1, Literal lit2, Literal lit3) {
@@ -29,10 +33,12 @@ Literals::Literals(Literal lit1, Literal lit2, Literal lit3) {
   this->add(lit1);
   this->add(lit2);
   this->add(lit3);
+  mark = false;
 }
 
 Literals::Literals(LiteralList* lits) {
   literals = lits;
+  mark = false;
 }
 
 Literals::~Literals() {
@@ -48,15 +54,19 @@ void Literals::Init() {
  */
 
 void Literals::add(Literal lit) {
+  if (max_var < var(lit)) max_var = var(lit);
   literals->push_back(lit);
 }
 
 void Literals::addAll(Literals* clause) {
+  if (max_var < clause->maxVar()) max_var = clause->maxVar();
   literals->insert(literals->end(), clause->begin(), clause->end());
 }
 
 void Literals::addAll(std::vector<Literal>* clause) {
-  literals->insert(literals->end(), clause->begin(), clause->end());
+  for (std::vector<Literal>::iterator it = literals->begin(); it != literals->end(); it++) {
+    this->add(*it);
+  }
 }
 
 
@@ -193,6 +203,112 @@ Literals* Literals::allBut(Literal exclude) {
     }
   }
   return new Literals(vec);
+}
+
+// from clause
+void Literals::setMarked() {
+  mark = true;
+}
+
+void Literals::unsetMarked() {
+  mark = false;
+}
+
+bool Literals::isMarked() {
+  return mark;
+}
+
+void Literals::inlineNegate() {
+  for (unsigned int i = 0; i < size(); i++) {
+    (*literals)[i] = ~(*literals)[i];
+  }
+}
+
+bool Literals::isBlockedBy(Literal blocking, Literals* clause) {
+  for (Literals::iterator it = clause->begin(); it != clause->end(); ++it) {
+    Literal& lit = *it;
+    if (lit != ~blocking && this->contains(~lit)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// from cube
+Literals* Literals::negate() {
+  Literals* lits = new Literals();
+  for (iterator it = begin(); it != end(); ++it) {
+    lits->add(~(*it));
+  }
+  return lits;
+}
+
+void Literals::clear() {
+  literals->clear();
+}
+
+Literals* Literals::clone() {
+  Literals* lits = new Literals();
+  lits->addAll(this);
+  return lits;
+}
+
+bool Literals::isConsistentWith(Literals* lits) {
+  for (unsigned int i = 0, j = 0; i < this->size() && j < lits->size(); ) {
+    Literal lit1 = this->get(i);
+    Literal lit2 = lits->get(j);
+    if (var(lit1) < var(lit2)) {
+      i++;
+    } else if (var(lit2) < var(lit1)) {
+      j++;
+    } else {
+      if (lit1 == ~lit2) {
+        return false;
+      }
+      i++;
+      j++;
+    }
+  }
+  return true;
+}
+
+int Literals::cardinality(Literals* lits) {
+  int count = 0;
+  for (unsigned int j = 0; j < lits->size(); j++) {
+    if (this->contains(lits->get(j))) {
+      count++;
+    }
+  }
+  return count;
+}
+
+bool Literals::satisfies(Literals* lits) {
+  for (unsigned int j = 0; j < lits->size(); j++) {
+    if (this->contains(lits->get(j))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Literals::falsifies(Literals* lits) {
+  for (unsigned int j = 0; j < lits->size(); j++) {
+    if (!this->contains(~(lits->get(j)))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+ClauseList* Literals::checkSatisfied(ClauseList* list) {
+  ClauseList* notSatisfied = new ClauseList();
+  for (unsigned int i = 0; i < list->size(); i++) {
+    Literals* lits = list->get(i);
+    if (!this->satisfies(lits)) {
+      notSatisfied->add(lits);
+    }
+  }
+  return notSatisfied;
 }
 
 }

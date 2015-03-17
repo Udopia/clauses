@@ -24,7 +24,7 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
 
   this->inputs = new vector<Literal>();
   for (ClauseList::iterator it = forward->begin(); it != forward->end(); it++) {
-    Dark::Clause* clause = *it;
+    Dark::Literals* clause = *it;
     for (std::vector<Literal>::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
       if (*lit != ~output) {
         inputs->push_back(*lit);
@@ -49,7 +49,7 @@ Literal Gate::getOutput() {
   return output;
 }
 
-void Gate::addForwardClause(Clause* fwd) {
+void Gate::addForwardClause(Literals* fwd) {
   forward->add(fwd);
   for (std::vector<Literal>::iterator lit = fwd->begin(); lit != fwd->end(); ++lit) {
     if (*lit != ~output) {

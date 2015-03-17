@@ -7,21 +7,21 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
+#include "../types/Literals.h"
 
 class BinaryFilter: public ClauseFilter {
 
 public:
   BinaryFilter();
   virtual ~BinaryFilter();
-  virtual bool meetCriteria(Dark::Clause* clause);
+  virtual bool meetCriteria(Dark::Literals* clause);
 };
 
 BinaryFilter::BinaryFilter() { }
 
 BinaryFilter::~BinaryFilter() { }
 
-bool BinaryFilter::meetCriteria(Dark::Clause* clause) {
+bool BinaryFilter::meetCriteria(Dark::Literals* clause) {
   return clause->size() == 2;
 }
 

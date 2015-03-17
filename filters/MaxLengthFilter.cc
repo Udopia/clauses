@@ -7,7 +7,7 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
+#include "../types/Literals.h"
 
 class MaxLengthFilter: public ClauseFilter {
 private:
@@ -16,7 +16,7 @@ private:
 public:
   MaxLengthFilter(unsigned int length);
   virtual ~MaxLengthFilter();
-  virtual bool meetCriteria(Dark::Clause* clause);
+  virtual bool meetCriteria(Dark::Literals* clause);
 };
 
 MaxLengthFilter::MaxLengthFilter(unsigned int length) {
@@ -25,7 +25,7 @@ MaxLengthFilter::MaxLengthFilter(unsigned int length) {
 
 MaxLengthFilter::~MaxLengthFilter() { }
 
-bool MaxLengthFilter::meetCriteria(Dark::Clause* clause) {
+bool MaxLengthFilter::meetCriteria(Dark::Literals* clause) {
   return clause->size() <= length;
 }
 

@@ -16,10 +16,16 @@
 
 namespace Dark {
 
+class ClauseList;
+
 class Literals {
 
 private:
   typedef std::vector<Literal> LiteralList;
+
+  bool mark;
+
+  int max_var = 0;
 
   void Init();
 
@@ -36,6 +42,8 @@ public:
   Literals(LiteralList* lits);
 
   virtual ~Literals();
+
+  int maxVar() { return max_var; }
 
   void add(Literal lit);
   void addAll(Literals* clause);
@@ -67,6 +75,26 @@ public:
 
   Literals* allBut(Literal lit);
 
+  // from clause
+  void setMarked();
+  void unsetMarked();
+  bool isMarked();
+
+  void inlineNegate();
+
+  bool isBlockedBy(Literal blocking, Literals* clause);
+
+  // from cube
+  Literals* negate();
+  void clear();
+  bool isConsistentWith(Literals* cube);
+
+  int cardinality(Literals* clause);
+  bool satisfies(Literals* clause);
+  bool falsifies(Literals* clause);
+
+  ClauseList* checkSatisfied(ClauseList* list);
+  Literals* clone();
 };
 
 }

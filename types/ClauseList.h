@@ -10,7 +10,7 @@
 
 #include <vector>
 #include <memory>
-#include "Clause.h"
+#include "Literals.h"
 #include "Literal.h"
 #include "../filters/ClauseFilter.h"
 
@@ -20,7 +20,8 @@ namespace Dark {
 
 class ClauseList {
 private:
-  typedef std::vector<Clause*> InternalClauseList;
+  typedef std::vector<Literals*> InternalClauseList;
+  int max_var = 0;
 
 protected:
   InternalClauseList* clauses;
@@ -33,26 +34,27 @@ public:
 
   void freeClauses();
 
-  virtual void add(Clause* clause);
+  virtual void add(Literals* clause);
   void addAll(ClauseList* list);
-  Clause* get(int i);
-  Clause* getFirst();
-  Clause* getLast();
+  Literals* get(int i);
+  Literals* getFirst();
+  Literals* getLast();
   unsigned int size();
 
+  int maxVar() { return max_var; }
 
   iterator begin();
   iterator end();
 
-  Clause* find(Clause* clause);
-  bool contains(Clause* clause);
+  Literals* find(Literals* clause);
+  bool contains(Literals* clause);
 
-  bool isBlockedBy(Literal lit, Clause* clause);
+  bool isBlockedBy(Literal lit, Literals* clause);
   bool isBlockedBy(Literal lit, ClauseList* list);
 
   bool definesEquivalence(Literal lit, ClauseList* list);
 
-  Clause* getUnionOfLiterals();
+  Literals* getUnionOfLiterals();
 
   unsigned int minClauseSize();
   unsigned int maxClauseSize();

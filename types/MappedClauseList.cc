@@ -6,7 +6,7 @@
  */
 
 #include "MappedClauseList.h"
-#include "Clause.h"
+#include "Literals.h"
 
 namespace Dark {
 
@@ -22,7 +22,7 @@ MappedClauseList::~MappedClauseList() {
   delete clauseMap;
 }
 
-void MappedClauseList::add(Clause* clause) {
+void MappedClauseList::add(Literals* clause) {
   ClauseList::add(clause);
   // update clause map
   for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
@@ -46,7 +46,7 @@ void MappedClauseList::add(Clause* clause) {
   }
 }
 
-void MappedClauseList::augment(Clause* clause, Literal lit) {
+void MappedClauseList::augment(Literals* clause, Literal lit) {
   clause->add(lit);
 
   // create missing clause-list for both literals
@@ -79,7 +79,7 @@ void MappedClauseList::augmentAll(Literal lit) {
   }
 
   for (iterator it = begin(); it != end(); it++) {
-    Clause* cl = *it;
+    Literals* cl = *it;
     cl->add(lit);
     (*clauseMap)[lit]->add(cl);
   }

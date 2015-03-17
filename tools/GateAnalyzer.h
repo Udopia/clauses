@@ -20,10 +20,11 @@
 
 using namespace std;
 
+class MinisatSolver;
+
 namespace Dark {
 
-class Cube;
-class Clause;
+class Literals;
 class MappedClauseList;
 class Gate;
 
@@ -33,7 +34,7 @@ enum RootSelectionMethod {
 
 class GateAnalyzer {
 public:
-  GateAnalyzer(ClauseList* clauseList, bool full_eq_detection = false, bool use_refinement = false);
+  GateAnalyzer(ClauseList* clauseList, int full_eq_detection = 0, bool use_refinement = false);
   virtual ~GateAnalyzer();
 
   void analyzeEncoding(RootSelectionMethod method, int tries);
@@ -57,8 +58,9 @@ public:
 
   ClauseList* getSideProblem();
   ClauseList* getGateProblem();
-  ClauseList* getPrunedGateProblem(Cube* model);
+  ClauseList* getPrunedGateProblem(Literals* model);
   ClauseList* getAllClauses();
+
   ClauseList* getPGClauses(Literal root, bool monotonous);
   ClauseList* getPGClauses();
 
@@ -70,6 +72,8 @@ private:
   MappedClauseList* clauses;
   vector<bool>* visited;
 
+  MinisatSolver* minisat;
+
   map<Literal, vector<Literal>*>* parents;
 
   // store gates by output-variable
@@ -78,7 +82,7 @@ private:
   Projection* projection;
 
   bool use_refinement = false;
-  bool full_eq_detection = false;
+  int full_eq_detection = 0;
   int max_var = -1;
 
   int maxVar();
@@ -92,11 +96,16 @@ private:
   Gate* defGate(Literal output, ClauseList* fwd, ClauseList* bwd);
   void undefGate(Gate* gate);
 
+  bool isLocalFullGate(Literal output, ClauseList* fwd, ClauseList* bwd);
+
+  bool isHiddenFullGate(Literal output, ClauseList* fwd);
+  bool increment(vector<int>& positions, vector<int> maxima);
+
   bool classifyEncoding(Literal literal);
 
   bool isMonotonousInput(Literal output);
 
-  Clause* getNextClause(ClauseList* list, RootSelectionMethod method);
+  Literals* getNextClause(ClauseList* list, RootSelectionMethod method);
 
   void freeAllContent();
 };

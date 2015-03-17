@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "ParseUtils.h"
 #include "types/Literal.h"
-#include "types/Clause.h"
+#include "types/Literals.h"
 #include "types/ClauseList.h"
 
 //=================================================================================================
@@ -61,8 +61,8 @@ private:
   Dark::ClauseList* clauses;
 
   template<class B>
-  Dark::Clause* readClause(B& in) {
-    Dark::Clause* clause = new Dark::Clause();
+  Dark::Literals* readClause(B& in) {
+    Dark::Literals* clause = new Dark::Literals();
     int parsed_lit = parseInt(in);
     while (parsed_lit != 0) {
       int var = abs(parsed_lit)-1;

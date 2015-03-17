@@ -18,7 +18,7 @@ using namespace std;
 namespace Dark {
 
 class ClauseList;
-class Clause;
+class Literals;
 
 class Gate {
 public:
@@ -29,7 +29,7 @@ public:
   ClauseList* getForwardClauses();
   ClauseList* getBackwardClauses();
 
-  void addForwardClause(Clause* fwd);
+  void addForwardClause(Literals* fwd);
 
   vector<Literal>* getInputs();
   bool isMonotonous();

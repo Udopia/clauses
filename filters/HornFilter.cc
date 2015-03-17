@@ -7,7 +7,7 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
+#include "../types/Literals.h"
 #include "../types/Literal.h"
 
 class HornFilter: public ClauseFilter {
@@ -15,16 +15,16 @@ class HornFilter: public ClauseFilter {
 public:
   HornFilter();
   virtual ~HornFilter();
-  virtual bool meetCriteria(Dark::Clause* clause);
+  virtual bool meetCriteria(Dark::Literals* clause);
 };
 
 HornFilter::HornFilter() { }
 
 HornFilter::~HornFilter() { }
 
-bool HornFilter::meetCriteria(Dark::Clause* clause) {
+bool HornFilter::meetCriteria(Dark::Literals* clause) {
   int count = 0;
-  for (Dark::Clause::iterator lit = clause->begin(); lit != clause->end(); lit++) {
+  for (Dark::Literals::iterator lit = clause->begin(); lit != clause->end(); lit++) {
     if (!sign(*lit)) {
       count++;
       if (count > 1) {

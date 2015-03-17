@@ -8,7 +8,7 @@
 
 #include "Projection.h"
 
-#include "../types/Cube.h"
+#include "../types/Literals.h"
 
 
 using namespace std;
@@ -57,8 +57,8 @@ bool Projection::contains(int num) {
   return false;
 }
 
-Cube* Projection::project(Cube* cube) {
-  Cube* result = new Cube();
+Literals* Projection::project(Literals* cube) {
+  Literals* result = new Literals();
   for (std::vector<Literal>::iterator it = cube->begin(); it != cube->end(); ++it) {
     Literal lit = *it;
     if (this->contains(var(lit)+1)) {

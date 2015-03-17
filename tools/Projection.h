@@ -14,7 +14,7 @@
 
 namespace Dark {
 
-class Cube;
+class Literals;
 
 class Projection {
 public:
@@ -31,7 +31,7 @@ public:
   /**
    * apply projection to given cube
    */
-  Cube* project(Cube* cube);
+  Literals* project(Literals* cube);
 
 private:
   /**

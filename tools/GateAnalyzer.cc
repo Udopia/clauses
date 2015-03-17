@@ -11,27 +11,31 @@
 #include <deque>
 
 #include "../types/Literal.h"
-#include "../types/Cube.h"
-#include "../types/FixedSizeCube.h"
-#include "../types/Clause.h"
+#include "../types/Literals.h"
 #include "../types/MappedClauseList.h"
 
 #include "../filters/ClauseFilters.h"
+
+#include "../minisat/MinisatSolver.h"
 
 #include "Gate.h"
 #include "Projection.h"
 #include "GateAnalyzer.h"
 
 #include <assert.h>
+#include "../types/FixedSizeLiterals.h"
 
 #define VERBOSITY 0
 #include "../debug.h"
 
 namespace Dark {
 
-GateAnalyzer::GateAnalyzer(ClauseList* clauseList, bool full_eq_detection, bool use_refinement) {
+GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection,
+    bool use_refinement) {
   clauses = new MappedClauseList();
   clauses->addAll(clauseList);
+
+  minisat = new MinisatSolver(clauses);
 
   parents = new map<Literal, vector<Literal>*>();
   projection = new Projection();
@@ -54,14 +58,16 @@ GateAnalyzer::~GateAnalyzer() {
 
 void GateAnalyzer::freeAllContent() {
   clauses->freeClauses();
-  for (map<Literal, vector<Literal>*>::iterator it = parents->begin(); it != parents->end(); ++it) {
+  for (map<Literal, vector<Literal>*>::iterator it = parents->begin();
+      it != parents->end(); ++it) {
     delete it->second;
   }
 }
 
 ClauseList* GateAnalyzer::getGateClauses(Literal literal) {
   Gate* gate = (*gates)[var(literal)];
-  if (gate == NULL || gate->getOutput() != literal) return NULL;
+  if (gate == NULL || gate->getOutput() != literal)
+    return NULL;
   return gate->getForwardClauses();
 }
 
@@ -96,7 +102,7 @@ Gate* GateAnalyzer::getOrCreateGate(Literal output) {
   if (gate != NULL && gate->getOutput() == output) {
     return gate;
   } else {
-    assert (gate == NULL && "gate must not exist");
+    assert(gate == NULL && "gate must not exist");
     gate = new Gate(output, new ClauseList(), new ClauseList);
     (*gates)[var(output)] = gate;
     return gate;
@@ -140,24 +146,28 @@ void GateAnalyzer::setParent(Literal parent, Literal child) {
 
 void GateAnalyzer::unsetParent(Literal parent) {
   vector<Literal>* inputs = getInputs(parent);
-  for (vector<Literal>::iterator it = inputs->begin(); it != inputs->end(); it++) {
+  for (vector<Literal>::iterator it = inputs->begin(); it != inputs->end();
+      it++) {
     Literal child = *it;
     vector<Literal>* outputs = (*parents)[child];
-    outputs->erase(std::remove(outputs->begin(), outputs->end(), parent), outputs->end());
+    outputs->erase(std::remove(outputs->begin(), outputs->end(), parent),
+        outputs->end());
   }
 }
 
-
-Clause* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
+Literals* GateAnalyzer::getNextClause(ClauseList* list,
+    RootSelectionMethod method) {
   switch (method) {
   case FIRST_CLAUSE: {
     return list->getFirst();
   }
   case MAX_ID: {
     Literal maxLit = mkLit(0, false);
-    Clause* result = NULL;
-    for (ClauseList::iterator clause = list->begin(); clause != list->end(); clause++) {
-      for (Clause::iterator clit = (*clause)->begin(); clit != (*clause)->end(); clit++) {
+    Literals* result = NULL;
+    for (ClauseList::iterator clause = list->begin(); clause != list->end();
+        clause++) {
+      for (Literals::iterator clit = (*clause)->begin();
+          clit != (*clause)->end(); clit++) {
         if (var(*clit) > var(maxLit)) {
           maxLit = *clit;
           result = *clause;
@@ -168,24 +178,29 @@ Clause* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method
   }
   case MIN_OCCURENCE: {
     vector<int>* occurence = new vector<int>(maxVar(), 0);
-    vector<Clause*>* occCl = new vector<Clause*>(maxVar(), NULL);
-    for (ClauseList::iterator clause = list->begin(); clause != list->end(); clause++) {
-      for (Clause::iterator clit = (*clause)->begin(); clit != (*clause)->end(); clit++) {
+    vector<Literals*>* occCl = new vector<Literals*>(maxVar(), NULL);
+    for (ClauseList::iterator clause = list->begin(); clause != list->end();
+        clause++) {
+      for (Literals::iterator clit = (*clause)->begin();
+          clit != (*clause)->end(); clit++) {
         (*occurence)[var(*clit)]++;
         (*occCl)[var(*clit)] = *clause;
       }
     }
     int var = occurence->size() - 1;
-    while ((*occurence)[var] == 0) var--;
+    while ((*occurence)[var] == 0)
+      var--;
     for (int i = 0, n = var; i < n; i++) {
-      if ((*occurence)[i] == 0) continue;
+      if ((*occurence)[i] == 0)
+        continue;
       if ((*occurence)[var] > (*occurence)[i]) {
         var = i;
       }
     }
     return (*occCl)[var];
   }
-  default: return list->getLast();
+  default:
+    return list->getLast();
   }
 }
 
@@ -202,7 +217,7 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
   ClauseList* units = clauses->getByCriteria(createUnitFilter());
 
   Literal root = mkLit(newVar(), false);
-  Clause* unit = new Clause(root);
+  Literals* unit = new Literals(root);
   clauses->add(unit);
   for (unsigned int i = 0; i < units->size(); i++) {
     clauses->augment(units->get(i), ~root);
@@ -214,33 +229,37 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
   for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    Clause* next = getNextClause(remainder, method);
+    Literals* next = getNextClause(remainder, method);
 
     next->setMarked();
     getOrCreateGate(root)->addForwardClause(next);
-    for (Clause::iterator it = next->begin(); it != next->end(); it++) {
+    for (Literals::iterator it = next->begin(); it != next->end(); it++) {
       setParent(root, *it);
     }
     clauses->augment(next, ~root);
 
-    for (Clause::iterator it = next->begin(); it != next->end(); it++) {
-      if (*it != ~root) analyzeEncoding(*it);
+    for (Literals::iterator it = next->begin(); it != next->end(); it++) {
+      if (*it != ~root)
+        analyzeEncoding(*it);
     }
     remainder->dumpByCriteria(createMarkFilter());
   }
 
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
-    Clause* next = *it;
+  for (ClauseList::iterator it = remainder->begin(); it != remainder->end();
+      it++) {
+    Literals* next = *it;
     next->setMarked();
     getOrCreateGate(root)->addForwardClause(next);
-    for (Clause::iterator it2 = next->begin(); it2 != next->end(); it2++) {
+    for (Literals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
       setParent(root, *it2);
     }
     clauses->augment(next, ~root);
   }
 
-  assert (getRoots()->size() == 1 && "now there is exactly one root");
-  assert (getSideProblem()->size() == 0 && "all clauses are integrated into the gate-structure");
+  assert(getRoots()->size() == 1 && "now there is exactly one root");
+  assert(
+      getSideProblem()->size() == 0
+          && "all clauses are integrated into the gate-structure");
 
   delete remainder;
 }
@@ -266,14 +285,16 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
 
     Gate* gate = NULL;
 
-    ClauseList* fwd = clauses->getClauses(~output)->getByCriteria(createNoMarkFilter());
-    ClauseList* bwd = clauses->getClauses(output)->getByCriteria(createNoMarkFilter());
+    ClauseList* fwd = clauses->getClauses(~output)->getByCriteria(
+        createNoMarkFilter());
+    ClauseList* bwd = clauses->getClauses(output)->getByCriteria(
+        createNoMarkFilter());
 
     D1(
-      fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);
-      fwd->print(stderr);
-      bwd->print(stderr);
-      fprintf(stderr, "\n");
+        fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);
+        fwd->print(stderr);
+        bwd->print(stderr);
+        fprintf(stderr, "\n");
     )
 
     if (fwd->size() > 0) {
@@ -283,39 +304,128 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
           D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
           gate = defGate(output, fwd, bwd);
         }
-      }
-      else { // non-monotonous
+      } else { // non-monotonous
         D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
-        if (this->full_eq_detection && bwd->definesEquivalence(output, fwd)) {
+        if (this->full_eq_detection > 0
+            && bwd->definesEquivalence(output, fwd)) {
+          D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
+          gate = defGate(output, fwd, bwd);
+          gate->setHasNonMonotonousParent();
+        } else if (this->full_eq_detection == 2 && bwd->isBlockedBy(output, fwd)
+            && isHiddenFullGate(output, fwd)) {
+          D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
+          gate = defGate(output, fwd, bwd);
+          gate->setHasNonMonotonousParent();
+        } else if (this->full_eq_detection == 3 && bwd->isBlockedBy(output, fwd)
+            && isLocalFullGate(output, fwd, bwd)) {
           D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
           gate = defGate(output, fwd, bwd);
           gate->setHasNonMonotonousParent();
         }
-  //      else if (this->use_refinement && countParents(~output) == 1) { // We can try to fix it
-  //        Literal parent = *(getParents(~output)->begin());
-  //        Gate* gate = (*gates)[var(parent)];
-  //        if (gate->getForwardClauses()->size() == 1) {
-  //          undefGate(gate);
-  //
-  //          if (!isGate(output)) {
-  //            isGate(parent);
-  //            continue;
-  //          }
-  //        }
-  //      }
+        //      else if (this->use_refinement && countParents(~output) == 1) { // We can try to fix it
+        //        Literal parent = *(getParents(~output)->begin());
+        //        Gate* gate = (*gates)[var(parent)];
+        //        if (gate->getForwardClauses()->size() == 1) {
+        //          undefGate(gate);
+        //
+        //          if (!isGate(output)) {
+        //            isGate(parent);
+        //            continue;
+        //          }
+        //        }
+        //      }
       }
     }
 
     if (gate != NULL) {
-      literals->insert(literals->end(), gate->getInputs()->begin(), gate->getInputs()->end());
-    }
-    else {
+      literals->insert(literals->end(), gate->getInputs()->begin(),
+          gate->getInputs()->end());
+    } else {
       delete bwd;
       delete fwd;
     }
   }
 
   delete literals;
+}
+
+bool GateAnalyzer::isLocalFullGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
+  if (fwd->size() * fwd->maxClauseSize() > 100)
+      return false;
+
+  MinisatSolver* minisat = new MinisatSolver(bwd);
+
+  int i = 0;
+  vector<Literals*> cubes(fwd->size() + 1);
+  cubes[i] = new Literals(~output);
+  for (Literals* clause : *fwd) {
+    Literals* cube = clause->allBut(~output);
+    cube->inlineNegate();
+    cubes[++i] = cube;
+  }
+
+  i = 0;
+  vector<int> positions(cubes.size(), 0);
+  vector<int> maxima(cubes.size());
+  for (Literals* cube : cubes) {
+    maxima[i++] = cube->size();
+  }
+
+  Literals* lits = new Literals();
+  do {
+    i = 0;
+    for (Literals* cube : cubes) {
+      lits->add(cube->get(positions[i++]));
+    }
+    if (minisat->isUPConsistent(lits)) {
+      return false;
+    }
+  } while (increment(positions, maxima));
+
+  return true;
+}
+
+bool GateAnalyzer::isHiddenFullGate(Literal output, ClauseList* fwd) {
+  if (fwd->size() * fwd->maxClauseSize() > 100)
+    return false;
+
+  int i = 0;
+  vector<Literals*> cubes(fwd->size() + 1);
+  cubes[i] = new Literals(~output);
+  for (Literals* clause : *fwd) {
+    Literals* cube = clause->allBut(~output);
+    cube->inlineNegate();
+    cubes[++i] = cube;
+  }
+
+  i = 0;
+  vector<int> positions(cubes.size(), 0);
+  vector<int> maxima(cubes.size());
+  for (Literals* cube : cubes) {
+    maxima[i++] = cube->size();
+  }
+
+  Literals* lits = new Literals();
+  do {
+    i = 0;
+    for (Literals* cube : cubes) {
+      lits->add(cube->get(positions[i++]));
+    }
+    if (minisat->isUPConsistent(lits)) {
+      return false;
+    }
+  } while (increment(positions, maxima));
+
+  return true;
+}
+
+bool GateAnalyzer::increment(vector<int>& digits, const vector<int> maxima) {
+  unsigned int pos = 0;
+  int newDigit;
+  do {
+    newDigit = (digits[pos] + 1) % maxima[pos];
+  } while (newDigit == digits[pos++] && pos < digits.size());
+  return pos < digits.size();
 }
 
 Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
@@ -325,7 +435,8 @@ Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
   (*gates)[var(output)] = gate;
 
   vector<Literal>* inputs = gate->getInputs();
-  for (std::vector<Literal>::iterator lit = inputs->begin(); lit != inputs->end(); ++lit) {
+  for (std::vector<Literal>::iterator lit = inputs->begin();
+      lit != inputs->end(); ++lit) {
     setParent(output, *lit);
   }
 
@@ -346,7 +457,8 @@ bool GateAnalyzer::isMonotonousInput(Literal output) {
   }
 
   vector<Literal>* parents = getParents(output);
-  for (vector<Literal>::iterator it = parents->begin(); it != parents->end(); it++) {
+  for (vector<Literal>::iterator it = parents->begin(); it != parents->end();
+      it++) {
     if (getGate(*it)->hasNonMonotonousParent()) {
       return false;
     }
@@ -374,9 +486,10 @@ ClauseList* GateAnalyzer::getAllClauses() {
 ClauseList* GateAnalyzer::getPGClauses() {
   ClauseList* roots = getRoots();
 
-  assert (roots->size() == 1 && "at that point there should be exactly one output");
+  assert(
+      roots->size() == 1 && "at that point there should be exactly one output");
 
-  visited = new vector<bool>(2*maxVar() + 2, false);
+  visited = new vector<bool>(2 * maxVar() + 2, false);
 
   ClauseList* pgClauses = new ClauseList();
 
@@ -389,8 +502,10 @@ ClauseList* GateAnalyzer::getPGClauses() {
 ClauseList* GateAnalyzer::getPGClauses(Literal root, bool monotonous) {
   ClauseList* result = new ClauseList();
 
-  if ((*visited)[toInt(root)]) return result;
-  else (*visited)[toInt(root)] = true;
+  if ((*visited)[toInt(root)])
+    return result;
+  else
+    (*visited)[toInt(root)] = true;
 
   Gate* gate = getGate(root);
 
@@ -400,9 +515,11 @@ ClauseList* GateAnalyzer::getPGClauses(Literal root, bool monotonous) {
   }
 
   vector<Literal>* inputs = gate->getInputs();
-  for (vector<Literal>::iterator lit = inputs->begin(); lit != inputs->end(); lit++) {
+  for (vector<Literal>::iterator lit = inputs->begin(); lit != inputs->end();
+      lit++) {
     if (getGate(*lit) != NULL) {
-      result->addAll(getPGClauses(*lit, monotonous && gate->isMonotonousIn(*lit)));
+      result->addAll(
+          getPGClauses(*lit, monotonous && gate->isMonotonousIn(*lit)));
     }
   }
 
@@ -410,9 +527,9 @@ ClauseList* GateAnalyzer::getPGClauses(Literal root, bool monotonous) {
 }
 
 vector<int>* GateAnalyzer::getRecursiveGateOrWidths() {
-  vector<int>* widths = new vector<int>(2*maxVar() + 2, 0);
+  vector<int>* widths = new vector<int>(2 * maxVar() + 2, 0);
 
-  vector<bool>* visited = new vector<bool>(2*maxVar() + 2, false);
+  vector<bool>* visited = new vector<bool>(2 * maxVar() + 2, false);
 
   deque<Literal>* literals = new deque<Literal>();
   literals->push_back(getRoots()->getFirst()->getFirst());
@@ -421,14 +538,18 @@ vector<int>* GateAnalyzer::getRecursiveGateOrWidths() {
     Literal literal = literals->front();
     literals->pop_front();
 
-    if ((*visited)[toInt(literal)]) continue;
+    if ((*visited)[toInt(literal)])
+      continue;
     (*visited)[toInt(literal)] = true;
 
     Gate* gate = getGate(literal);
-    if (gate == NULL) continue;
+    if (gate == NULL)
+      continue;
 
-    for (vector<Literal>::iterator it = gate->getInputs()->begin(); it != gate->getInputs()->end(); it++) {
-      (*widths)[toInt(*it)] = (*widths)[toInt(literal)] + gate->countAlternatives(*it);
+    for (vector<Literal>::iterator it = gate->getInputs()->begin();
+        it != gate->getInputs()->end(); it++) {
+      (*widths)[toInt(*it)] = (*widths)[toInt(literal)]
+          + gate->countAlternatives(*it);
     }
   }
 
@@ -442,7 +563,7 @@ void GateAnalyzer::augmentClauses(int minWidth) {
 
   vector<vector<Literal>*>* dependencies = findConfluentOutputs();
 
-  vector<bool>* visited = new vector<bool>(2*maxVar() + 2, false);
+  vector<bool>* visited = new vector<bool>(2 * maxVar() + 2, false);
 
   deque<Literal>* literals = new deque<Literal>();
   literals->push_back(getRoots()->getFirst()->getFirst());
@@ -451,37 +572,42 @@ void GateAnalyzer::augmentClauses(int minWidth) {
     Literal literal = literals->front();
     literals->pop_front();
 
-    if ((*visited)[toInt(literal)]) continue;
+    if ((*visited)[toInt(literal)])
+      continue;
     (*visited)[toInt(literal)] = true;
 
     Gate* gate = getGate(literal);
-    if (gate == NULL) continue;
+    if (gate == NULL)
+      continue;
 
-    literals->insert(literals->end(), gate->getInputs()->begin(), gate->getInputs()->end());
+    literals->insert(literals->end(), gate->getInputs()->begin(),
+        gate->getInputs()->end());
 
     ClauseList* fwd = gate->getForwardClauses();
     ClauseList* bwd = gate->getBackwardClauses();
     vector<Literal>* deps = (*dependencies)[toInt(literal)];
     if (deps->size() > 0 && (*widths)[toInt(literal)] >= minWidth) {
       for (ClauseList::iterator it = fwd->begin(); it != fwd->end(); it++) {
-        Clause* cl = *it;
+        Literals* cl = *it;
         cl->addAll(deps);
         nAugmentedClauses++;
       }
       for (ClauseList::iterator it = bwd->begin(); it != bwd->end(); it++) {
-        Clause* cl = *it;
+        Literals* cl = *it;
         cl->addAll(deps);
         nAugmentedClauses++;
       }
     }
   }
 
-  fprintf(stderr, "Min Width is %i -> Number of Augmented Clauses: %i\n", minWidth, nAugmentedClauses);
+  fprintf(stderr, "Min Width is %i -> Number of Augmented Clauses: %i\n",
+      minWidth, nAugmentedClauses);
 }
 
 vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
-  vector<vector<Literal>*>* dependencies = new vector<vector<Literal>*>(2*maxVar() + 2, NULL);
-  vector<bool>* visited = new vector<bool>(2*maxVar() + 2, false);
+  vector<vector<Literal>*>* dependencies = new vector<vector<Literal>*>(
+      2 * maxVar() + 2, NULL);
+  vector<bool>* visited = new vector<bool>(2 * maxVar() + 2, false);
 
   deque<Literal>* literals = new deque<Literal>();
   Literal root = getRoots()->getFirst()->getFirst();
@@ -496,7 +622,8 @@ vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
     (*visited)[toInt(literal)] = true;
 
     Gate* gate = getGate(literal);
-    if (gate == NULL) continue;
+    if (gate == NULL)
+      continue;
 
     // add the intersection of all parents' dependencies as local dependencies
     vector<Literal>* parents = getParents(literal);
@@ -505,17 +632,16 @@ vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
       vector<Literal>* deps = new vector<Literal>();
 
       deps->push_back(~(*parents)[0]);
-      deps->insert(deps->end(),
-          (*dependencies)[toInt((*parents)[0])]->begin(),
+      deps->insert(deps->end(), (*dependencies)[toInt((*parents)[0])]->begin(),
           (*dependencies)[toInt((*parents)[0])]->end());
 
-      for (vector<Literal>::iterator p = parents->begin() + 1; p != parents->end(); p++) {
+      for (vector<Literal>::iterator p = parents->begin() + 1;
+          p != parents->end(); p++) {
         temp->clear();
         vector<Literal>* pdeps = (*dependencies)[toInt(*p)];
 
-        set_intersection(pdeps->begin(), pdeps->end(),
-            deps->begin(), deps->end(),
-            std::back_inserter(*temp));
+        set_intersection(pdeps->begin(), pdeps->end(), deps->begin(),
+            deps->end(), std::back_inserter(*temp));
 
         deps->clear();
         deps->insert(deps->begin(), temp->begin(), temp->end());
@@ -527,16 +653,19 @@ vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
 
     // only add inputs, that have all parents visited
     vector<Literal>* inputs = gate->getInputs();
-    for (vector<Literal>::iterator it = inputs->begin(); it != inputs->end(); it++) {
+    for (vector<Literal>::iterator it = inputs->begin(); it != inputs->end();
+        it++) {
       bool allParentsVisited = true;
       vector<Literal>* parents = getParents(*it);
-      for (vector<Literal>::iterator it2 = parents->begin(); it2 != parents->end(); it2++) {
+      for (vector<Literal>::iterator it2 = parents->begin();
+          it2 != parents->end(); it2++) {
         if (!(*visited)[toInt(*it2)]) {
           allParentsVisited = false;
           break;
         }
       }
-      if (allParentsVisited) literals->push_back(*it);
+      if (allParentsVisited)
+        literals->push_back(*it);
     }
   }
 
@@ -546,7 +675,8 @@ vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
 }
 
 ClauseList* GateAnalyzer::getSideProblem() {
-  ClauseList* list = clauses->getByCriteria(createNotFilter(createMarkFilter()));
+  ClauseList* list = clauses->getByCriteria(
+      createNotFilter(createMarkFilter()));
   D1(printf("SideProblem size = %i (of %i)\n", list->size(), clauses->size());)
   D1(list->print(stderr); fprintf(stderr, "\n");)
   return list;
@@ -559,48 +689,52 @@ ClauseList* GateAnalyzer::getGateProblem() {
   return list;
 }
 
-ClauseList* GateAnalyzer::getPrunedGateProblem(Cube* inputModel) {
+ClauseList* GateAnalyzer::getPrunedGateProblem(Literals* inputModel) {
   ClauseList* list = new ClauseList();
-  FixedSizeCube* model = new FixedSizeCube(inputModel->size(), inputModel);
+  FixedSizeLiterals* model = new FixedSizeLiterals(inputModel->size(),
+      inputModel);
 
-  vector<bool> visited(2*inputModel->size(), false);
+  vector<bool> visited(2 * inputModel->size(), false);
 
   // init roots
   ClauseList* roots = clauses->getByCriteria(createUnitFilter());
   vector<Literal>* literals = new vector<Literal>();
   for (unsigned int i = 0; i < roots->size(); i++) {
-    Clause* root = roots->get(i);
+    Literals* root = roots->get(i);
     list->add(root);
     literals->push_back(root->getFirst());
   }
 
   // traverse dag
-  for (vector<Literal>::iterator it = literals->begin(); it != literals->end(); it++) {
+  for (vector<Literal>::iterator it = literals->begin(); it != literals->end();
+      it++) {
     Literal literal = *it;
     Gate* gate = getGate(literal);
 
-    if (gate == NULL) continue;
+    if (gate == NULL)
+      continue;
 
     if (model->satisfies(literal) || !gate->isMonotonous()) {
       list->addAll(gate->getForwardClauses());
       vector<Literal>* children = getInputs(literal);
-      for (vector<Literal>::iterator child = children->begin(); child != children->end(); child++) {
+      for (vector<Literal>::iterator child = children->begin();
+          child != children->end(); child++) {
         if (!visited[toInt(*child)]) {
           literals->push_back(*child);
           visited[toInt(literal)] = true;
         }
       }
     } else {
-      D1(printf("PRUNING AT %s%i\n", sign(literal) ? "-" : "", var(literal)+1);)
-    }
+    D1(printf("PRUNING AT %s%i\n", sign(literal) ? "-" : "", var(literal)+1);)
   }
+}
 
-  delete literals;
-  delete roots;
-  delete model;
+delete literals;
+delete roots;
+delete model;
 
-  D1(printf("Pruned GateProblem size = %i\n", list->size());)
+D1(printf("Pruned GateProblem size = %i\n", list->size());)
 
-  return list;
+return list;
 }
 }

@@ -7,7 +7,7 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
+#include "../types/Literals.h"
 
 class NotFilter: public ClauseFilter {
 private:
@@ -16,7 +16,7 @@ private:
 public:
   NotFilter(std::unique_ptr<ClauseFilter> argument);
   virtual ~NotFilter();
-  virtual bool meetCriteria(Dark::Clause* clause);
+  virtual bool meetCriteria(Dark::Literals* clause);
 };
 
 NotFilter::NotFilter(std::unique_ptr<ClauseFilter> argument) {
@@ -25,7 +25,7 @@ NotFilter::NotFilter(std::unique_ptr<ClauseFilter> argument) {
 
 NotFilter::~NotFilter() { }
 
-bool NotFilter::meetCriteria(Dark::Clause* clause) {
+bool NotFilter::meetCriteria(Dark::Literals* clause) {
   return !argument->meetCriteria(clause);
 }
 

@@ -15,7 +15,7 @@
 
 namespace Dark {
 
-class Clause;
+class Literals;
 
 class MappedClauseList: public ClauseList {
 private:
@@ -26,9 +26,9 @@ public:
   MappedClauseList();
   virtual ~MappedClauseList();
 
-  void add(Clause* clause);
+  void add(Literals* clause);
 
-  void augment(Clause* clause, Literal lit);
+  void augment(Literals* clause, Literal lit);
   void augmentAll(Literal lit);
 
   ClauseList* getClauses(Literal literal);

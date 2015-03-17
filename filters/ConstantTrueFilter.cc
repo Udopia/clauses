@@ -7,21 +7,21 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
+#include "../types/Literals.h"
 
 class ConstantTrueFilter: public ClauseFilter {
 
 public:
   ConstantTrueFilter();
   virtual ~ConstantTrueFilter();
-  virtual bool meetCriteria(Dark::Clause* clause);
+  virtual bool meetCriteria(Dark::Literals* clause);
 };
 
 ConstantTrueFilter::ConstantTrueFilter() { }
 
 ConstantTrueFilter::~ConstantTrueFilter() { }
 
-bool ConstantTrueFilter::meetCriteria(Dark::Clause* clause) {
+bool ConstantTrueFilter::meetCriteria(Dark::Literals* clause) {
   return clause == clause;
 }
 

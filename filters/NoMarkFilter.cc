@@ -7,14 +7,14 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
+#include "../types/Literals.h"
 
 class NoMarkFilter: public ClauseFilter {
 
 public:
   NoMarkFilter();
   virtual ~NoMarkFilter();
-  virtual bool meetCriteria(Dark::Clause* clause);
+  virtual bool meetCriteria(Dark::Literals* clause);
   virtual void print();
 };
 
@@ -22,7 +22,7 @@ NoMarkFilter::NoMarkFilter() { }
 
 NoMarkFilter::~NoMarkFilter() { }
 
-bool NoMarkFilter::meetCriteria(Dark::Clause* clause) {
+bool NoMarkFilter::meetCriteria(Dark::Literals* clause) {
   return !clause->isMarked();
 }
 

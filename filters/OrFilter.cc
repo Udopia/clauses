@@ -7,7 +7,7 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
+#include "../types/Literals.h"
 
 class OrFilter: public ClauseFilter {
 private:
@@ -17,7 +17,7 @@ private:
 public:
   OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right);
   virtual ~OrFilter();
-  virtual bool meetCriteria(Dark::Clause* clause);
+  virtual bool meetCriteria(Dark::Literals* clause);
 };
 
 OrFilter::OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right) {
@@ -27,7 +27,7 @@ OrFilter::OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFil
 
 OrFilter::~OrFilter() { }
 
-bool OrFilter::meetCriteria(Dark::Clause* clause) {
+bool OrFilter::meetCriteria(Dark::Literals* clause) {
   return left->meetCriteria(clause) || right->meetCriteria(clause);
 }
 

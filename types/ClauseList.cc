@@ -18,7 +18,7 @@ namespace Dark {
  * Constructor
  */
 ClauseList::ClauseList() {
-  clauses = new vector<Clause*>();
+  clauses = new vector<Literals*>();
 }
 
 /**
@@ -29,7 +29,7 @@ ClauseList::~ClauseList() {
 }
 
 void ClauseList::freeClauses() {
-  for (std::vector<Clause*>::iterator it = clauses->begin(); it != clauses->end(); ++it) {
+  for (std::vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); ++it) {
     delete *it;
   }
 }
@@ -37,7 +37,8 @@ void ClauseList::freeClauses() {
 /**
  * Accessing Methods
  */
-void ClauseList::add(Clause* clause) {
+void ClauseList::add(Literals* clause) {
+  if (clause->maxVar() > this->maxVar()) max_var = clause->maxVar();
   clauses->push_back(clause);
 }
 
@@ -47,15 +48,15 @@ void ClauseList::addAll(ClauseList* list) {
   }
 }
 
-Clause* ClauseList::get(int i) {
+Literals* ClauseList::get(int i) {
   return (*clauses)[i];
 }
 
-Clause* ClauseList::getFirst() {
+Literals* ClauseList::getFirst() {
   return (*clauses)[0];
 }
 
-Clause* ClauseList::getLast() {
+Literals* ClauseList::getLast() {
   return (*clauses)[clauses->size()-1];
 }
 
@@ -74,20 +75,20 @@ ClauseList::iterator ClauseList::end() {
 /**
  * Comparative Methods
  */
-Clause* ClauseList::find(Clause* clause) {
+Literals* ClauseList::find(Literals* clause) {
   for (unsigned int i = 0; i < size(); ++i) {
     if (get(i)->equals(clause)) return get(i);
   }
   return NULL;
 }
 
-bool ClauseList::contains(Clause* clause) {
+bool ClauseList::contains(Literals* clause) {
   return find(clause) != NULL;
 }
 
 ClauseList* ClauseList::getByCriteria(unique_ptr<ClauseFilter> filter) {
   ClauseList* result = new ClauseList();
-  for (vector<Clause*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+  for (vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
     if (filter->meetCriteria(*it)) {
       result->add(*it);
     }
@@ -97,8 +98,8 @@ ClauseList* ClauseList::getByCriteria(unique_ptr<ClauseFilter> filter) {
 
 ClauseList* ClauseList::removeByCriteria(unique_ptr<ClauseFilter> filter) {
   ClauseList* result = new ClauseList();
-  vector<Clause*>* nextClauses = new vector<Clause*>();
-  for (vector<Clause*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+  vector<Literals*>* nextClauses = new vector<Literals*>();
+  for (vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
     if (filter->meetCriteria(*it)) {
       result->add(*it);
     } else {
@@ -111,8 +112,8 @@ ClauseList* ClauseList::removeByCriteria(unique_ptr<ClauseFilter> filter) {
 }
 
 void ClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
-  vector<Clause*>* nextClauses = new vector<Clause*>();
-  for (vector<Clause*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+  vector<Literals*>* nextClauses = new vector<Literals*>();
+  for (vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
     if (!filter->meetCriteria(*it)) {
       nextClauses->push_back(*it);
     }
@@ -121,9 +122,9 @@ void ClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
   clauses = nextClauses;
 }
 
-bool ClauseList::isBlockedBy(Literal lit, Clause* clause) {
+bool ClauseList::isBlockedBy(Literal lit, Literals* clause) {
   for (iterator it = begin(); it != end(); it++) {
-    Clause* cl = *it;
+    Literals* cl = *it;
     if (!(cl->isBlockedBy(lit, clause))) {
       return false;
     }
@@ -133,7 +134,7 @@ bool ClauseList::isBlockedBy(Literal lit, Clause* clause) {
 
 bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
   for (iterator it = list->begin(); it != list->end(); it++) {
-    Clause* cl = *it;
+    Literals* cl = *it;
     if (!(this->isBlockedBy(lit, cl))) {
       return false;
     }
@@ -142,41 +143,31 @@ bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
 }
 
 bool ClauseList::definesEquivalence(Literal lit, ClauseList* other) {
-//  fprintf(stderr, "full detection:");
   if (!isBlockedBy(lit, other)) {
-//    fprintf(stderr, "!blocked\n");
     return false;
   }
-  Clause* thisLits = this->getUnionOfLiterals();
-  Clause* otherLits = other->getUnionOfLiterals();
+  Literals* thisLits = this->getUnionOfLiterals();
+  Literals* otherLits = other->getUnionOfLiterals();
   otherLits->inlineNegate();
   if (!thisLits->equals(otherLits)) {
-//    fprintf(stderr, "!samevars\n");
     return false;
   }
-
-//  fprintf(stderr, "This Size: %i lits:%i; min/max: %i/%i\n", this->size(), thisLits->size(), this->minClauseSize(), this->maxClauseSize());
-//  fprintf(stderr, "Other Size: %i lits:%i; min/max: %i/%i\ņ", other->size(), otherLits->size(), other->minClauseSize(), other->maxClauseSize());
 
   // fast and-/or-detection
   if (this->size() == 1 && other->size() == otherLits->size()-1) {
-//    fprintf(stderr, "!sizes fit\n");
     return other->maxClauseSize() == other->minClauseSize() && other->maxClauseSize() == 2;
   }
   if (other->size() == 1 && this->size() == thisLits->size()-1) {
-//    fprintf(stderr, "!sizes fit\n");
     return this->maxClauseSize() == this->minClauseSize() && this->maxClauseSize() == 2;
   }
 
-  // TODO: equivalence detection
-//  fprintf(stderr, "!hit\n");
   return false;
 }
 
-Clause* ClauseList::getUnionOfLiterals() {
-  Clause* clause = new Clause();
+Literals* ClauseList::getUnionOfLiterals() {
+  Literals* clause = new Literals();
   for (ClauseList::iterator it = this->begin(); it != this->end(); it++) {
-    for (Clause::iterator it2 = (*it)->begin(); it2 != (*it)->end(); it2++) {
+    for (Literals::iterator it2 = (*it)->begin(); it2 != (*it)->end(); it2++) {
       if (!clause->contains(*it2)) {
         clause->add(*it2);
       }
@@ -218,7 +209,7 @@ void ClauseList::unmarkAll() {
  */
 void ClauseList::print(FILE* out) {
   for (unsigned int i = 0; i < clauses->size(); ++i) {
-    Dark::Clause* clause = (*clauses)[i];
+    Dark::Literals* clause = (*clauses)[i];
     if (clause != NULL) {
       clause->print(out);
     } else {
@@ -229,7 +220,7 @@ void ClauseList::print(FILE* out) {
 
 void ClauseList::printDimacs(FILE* out) {
   for (unsigned int i = 0; i < clauses->size(); ++i) {
-    Dark::Clause* clause = (*clauses)[i];
+    Dark::Literals* clause = (*clauses)[i];
     if (clause != NULL) {
       clause->printDimacs(out);
     } else {

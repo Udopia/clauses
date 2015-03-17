@@ -7,34 +7,33 @@
 
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Clause.h"
-#include "../types/Cube.h"
+#include "../types/Literals.h"
 
 class SatFilter: public ClauseFilter {
 
 private:
-  Dark::Cube* model;
+  Dark::Literals* model;
 
 public:
-  SatFilter(Dark::Cube* model);
+  SatFilter(Dark::Literals* model);
   virtual ~SatFilter();
-  virtual bool meetCriteria(Dark::Clause* clause);
+  virtual bool meetCriteria(Dark::Literals* clause);
 };
 
-SatFilter::SatFilter(Dark::Cube* model) {
+SatFilter::SatFilter(Dark::Literals* model) {
   this->model = model;
 }
 
 SatFilter::~SatFilter() { }
 
-bool SatFilter::meetCriteria(Dark::Clause* clause) {
+bool SatFilter::meetCriteria(Dark::Literals* clause) {
   return model->satisfies(clause);
 }
 
 /**
  * Implementation for IClauseFilters method
  */
-std::unique_ptr<ClauseFilter> createSatFilter(Dark::Cube* model) {
+std::unique_ptr<ClauseFilter> createSatFilter(Dark::Literals* model) {
   return std::unique_ptr<ClauseFilter>(new SatFilter(model));
 }
 
