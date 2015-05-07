@@ -35,7 +35,11 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection,
   clauses = new MappedClauseList();
   clauses->addAll(clauseList);
 
-  minisat = new MinisatSolver(clauses);
+  if (full_eq_detection > 1) {
+    minisat = new MinisatSolver(clauses);
+  } else {
+    minisat = NULL;
+  }
 
   parents = new map<Literal, vector<Literal>*>();
   projection = new Projection();

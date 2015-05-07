@@ -43,6 +43,20 @@ public:
 
   int maxVar() { return max_var; }
 
+  int countVariables() {
+    vector<bool> used(max_var+1, false);
+    for (iterator it = begin(); it != end(); it++) {
+      for (Literals::iterator lit = (*it)->begin(); lit != (*it)->end(); lit++) {
+        used[var(*lit)] = true;
+      }
+    }
+    int result = 0;
+    for (int i = 0; i <= max_var; i++) {
+      if (used[i]) result++;
+    }
+    return result;
+  }
+
   iterator begin();
   iterator end();
 
