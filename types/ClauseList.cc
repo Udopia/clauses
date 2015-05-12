@@ -143,9 +143,6 @@ bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
 }
 
 bool ClauseList::definesEquivalence(Literal lit, ClauseList* other) {
-  if (!isBlockedBy(lit, other)) {
-    return false;
-  }
   Literals* thisLits = this->getUnionOfLiterals();
   Literals* otherLits = other->getUnionOfLiterals();
   otherLits->inlineNegate();

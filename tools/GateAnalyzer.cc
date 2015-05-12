@@ -181,27 +181,22 @@ Literals* GateAnalyzer::getNextClause(ClauseList* list,
     return result;
   }
   case MIN_OCCURENCE: {
-    vector<int>* occurence = new vector<int>(maxVar(), 0);
-    vector<Literals*>* occCl = new vector<Literals*>(maxVar(), NULL);
-    for (ClauseList::iterator clause = list->begin(); clause != list->end();
-        clause++) {
-      for (Literals::iterator clit = (*clause)->begin();
-          clit != (*clause)->end(); clit++) {
-        (*occurence)[var(*clit)]++;
-        (*occCl)[var(*clit)] = *clause;
+    Literal min = 0;
+    int minOcc = INT_MAX;
+    for (int i = 0; i < maxVar(); i++) {
+      Literal lit = mkLit(i, false);
+      int occ = clauses->countOccurence(lit);
+      if (occ != 0 && occ < minOcc) {
+        minOcc = occ;
+        min = lit;
+      }
+      occ = clauses->countOccurence(~lit);
+      if (occ != 0 && occ < minOcc) {
+        minOcc = occ;
+        min = ~lit;
       }
     }
-    int var = occurence->size() - 1;
-    while ((*occurence)[var] == 0)
-      var--;
-    for (int i = 0, n = var; i < n; i++) {
-      if ((*occurence)[i] == 0)
-        continue;
-      if ((*occurence)[var] > (*occurence)[i]) {
-        var = i;
-      }
-    }
-    return (*occCl)[var];
+    return min;
   }
   default:
     return list->getLast();
@@ -308,36 +303,17 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
           D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
           gate = defGate(output, fwd, bwd);
         }
-      } else { // non-monotonous
+      } else if (bwd->isBlockedBy(output, fwd)) { // non-monotonous
         D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
-        if (this->full_eq_detection > 0
-            && bwd->definesEquivalence(output, fwd)) {
+        if (this->full_eq_detection > 0 && bwd->definesEquivalence(output, fwd)) {
           D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
           gate = defGate(output, fwd, bwd);
           gate->setHasNonMonotonousParent();
-        } else if (this->full_eq_detection == 2 && bwd->isBlockedBy(output, fwd)
-            && isHiddenFullGate(output, fwd)) {
-          D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
-          gate = defGate(output, fwd, bwd);
-          gate->setHasNonMonotonousParent();
-        } else if (this->full_eq_detection == 3 && bwd->isBlockedBy(output, fwd)
-            && isLocalFullGate(output, fwd, bwd)) {
+        } else if (this->full_eq_detection == 2 && isHiddenFullGate(output, fwd)) {
           D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
           gate = defGate(output, fwd, bwd);
           gate->setHasNonMonotonousParent();
         }
-        //      else if (this->use_refinement && countParents(~output) == 1) { // We can try to fix it
-        //        Literal parent = *(getParents(~output)->begin());
-        //        Gate* gate = (*gates)[var(parent)];
-        //        if (gate->getForwardClauses()->size() == 1) {
-        //          undefGate(gate);
-        //
-        //          if (!isGate(output)) {
-        //            isGate(parent);
-        //            continue;
-        //          }
-        //        }
-        //      }
       }
     }
 
@@ -390,7 +366,7 @@ bool GateAnalyzer::isLocalFullGate(Literal output, ClauseList* fwd, ClauseList* 
 }
 
 bool GateAnalyzer::isHiddenFullGate(Literal output, ClauseList* fwd) {
-  if (fwd->size() * fwd->maxClauseSize() > 100)
+  if (fwd->size() > 3 || fwd->maxClauseSize() > 4)
     return false;
 
   int i = 0;

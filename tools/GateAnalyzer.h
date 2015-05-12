@@ -18,9 +18,11 @@
 #include "../types/Literal.h"
 #include "../types/ClauseList.h"
 
+#include "../minisat/MinisatSolver.h"
+
 using namespace std;
 
-class MinisatSolver;
+//class MinisatSolver;
 
 namespace Dark {
 
@@ -42,6 +44,7 @@ public:
   /**
    * Access Gate-Structure
    */
+  int maxVar();
   ClauseList* getRoots();
   Gate* getGate(Literal output);
   Gate* getOrCreateGate(Literal output);
@@ -85,7 +88,6 @@ private:
   int full_eq_detection = 0;
   int max_var = -1;
 
-  int maxVar();
   int newVar();
 
   void analyzeEncoding(Literal root);
