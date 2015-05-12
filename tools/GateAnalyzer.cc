@@ -181,7 +181,7 @@ Literals* GateAnalyzer::getNextClause(ClauseList* list,
     return result;
   }
   case MIN_OCCURENCE: {
-    Literal min = 0;
+    Literal min;
     int minOcc = INT_MAX;
     for (int i = 0; i < maxVar(); i++) {
       Literal lit = mkLit(i, false);
@@ -196,7 +196,7 @@ Literals* GateAnalyzer::getNextClause(ClauseList* list,
         min = ~lit;
       }
     }
-    return min;
+    return clauses->getClauses(min)->getFirst();
   }
   default:
     return list->getLast();
