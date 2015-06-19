@@ -142,7 +142,7 @@ bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
   return true;
 }
 
-bool ClauseList::definesEquivalence(Literal lit, ClauseList* other) {
+bool ClauseList::matchesFullGatePattern(Literal lit, ClauseList* other) {
   Literals* thisLits = this->getUnionOfLiterals();
   Literals* otherLits = other->getUnionOfLiterals();
   otherLits->inlineNegate();

@@ -66,7 +66,7 @@ public:
   bool isBlockedBy(Literal lit, Literals* clause);
   bool isBlockedBy(Literal lit, ClauseList* list);
 
-  bool definesEquivalence(Literal lit, ClauseList* list);
+  bool matchesFullGatePattern(Literal lit, ClauseList* list);
 
   Literals* getUnionOfLiterals();
 
@@ -75,7 +75,7 @@ public:
 
   ClauseList* getByCriteria(unique_ptr<ClauseFilter> filter);
   ClauseList* removeByCriteria(unique_ptr<ClauseFilter> filter);
-  void dumpByCriteria(unique_ptr<ClauseFilter> filter);
+  virtual void dumpByCriteria(unique_ptr<ClauseFilter> filter);
 
   void markAll();
   void unmarkAll();

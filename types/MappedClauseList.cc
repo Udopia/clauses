@@ -12,7 +12,7 @@ namespace Dark {
 
 MappedClauseList::MappedClauseList() {
   clauseMap = new std::map<Literal, Dark::ClauseList*>();
-  maxVar = 0;
+  maxVar = -1;
 }
 
 MappedClauseList::~MappedClauseList() {
@@ -22,25 +22,23 @@ MappedClauseList::~MappedClauseList() {
   delete clauseMap;
 }
 
+void MappedClauseList::newVar(int var) {
+	while (maxVar < var) {
+		maxVar++;
+		Literal lit = mkLit(maxVar, false);
+	  (*clauseMap)[lit] = new Dark::ClauseList();
+	  (*clauseMap)[~lit] = new Dark::ClauseList();
+	}
+}
+
 void MappedClauseList::add(Literals* clause) {
   ClauseList::add(clause);
   // update clause map
   for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
     Literal lit = *it;
 
-    // create missing clause-list for both Literalerals
-    if (clauseMap->count(lit) <= 0) {
-      (*clauseMap)[lit] = new Dark::ClauseList();
-    }
-    if (clauseMap->count(~lit) <= 0) {
-      (*clauseMap)[~lit] = new Dark::ClauseList();
-    }
+    newVar(var(lit));
 
-    if (maxVar < var(lit)) {
-      maxVar = var(lit);
-    }
-
-    // fetch and update clause-list
     Dark::ClauseList* clauseList = (*clauseMap)[lit];
     clauseList->add(clause);
   }
@@ -49,34 +47,14 @@ void MappedClauseList::add(Literals* clause) {
 void MappedClauseList::augment(Literals* clause, Literal lit) {
   clause->add(lit);
 
-  // create missing clause-list for both literals
-  if (clauseMap->count(lit) <= 0) {
-    (*clauseMap)[lit] = new Dark::ClauseList();
-  }
-  if (clauseMap->count(~lit) <= 0) {
-    (*clauseMap)[~lit] = new Dark::ClauseList();
-  }
-
-  if (maxVar < var(lit)) {
-    maxVar = var(lit);
-  }
+  newVar(var(lit));
 
   // update occurence-list
   (*clauseMap)[lit]->add(clause);
 }
 
 void MappedClauseList::augmentAll(Literal lit) {
-  // create missing clause-list for both Literals
-  if (clauseMap->count(lit) <= 0) {
-    (*clauseMap)[lit] = new Dark::ClauseList();
-  }
-  if (clauseMap->count(~lit) <= 0) {
-    (*clauseMap)[~lit] = new Dark::ClauseList();
-  }
-
-  if (maxVar < var(lit)) {
-    maxVar = var(lit);
-  }
+  newVar(var(lit));
 
   for (iterator it = begin(); it != end(); it++) {
     Literals* cl = *it;
@@ -87,40 +65,25 @@ void MappedClauseList::augmentAll(Literal lit) {
 
 void MappedClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
   vector<Literals*>* nextClauses = new vector<Literals*>();
+
   for (vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
     if (!filter->meetCriteria(*it)) {
       nextClauses->push_back(*it);
     }
   }
+
   delete clauses;
-  clauses = nextClauses;
-
   delete clauseMap;
+
+  clauses = new vector<Literals*>();
   clauseMap = new std::map<Literal, Dark::ClauseList*>();
-  maxVar = 0;
+  maxVar = -1;
 
-  for (vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
-    Literals* clause = *it;
-    for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
-      Literal lit = *it;
-
-      // create missing clause-list for both Literals
-      if (clauseMap->count(lit) <= 0) {
-        (*clauseMap)[lit] = new Dark::ClauseList();
-      }
-      if (clauseMap->count(~lit) <= 0) {
-        (*clauseMap)[~lit] = new Dark::ClauseList();
-      }
-
-      if (maxVar < var(lit)) {
-        maxVar = var(lit);
-      }
-
-      // fetch and update clause-list
-      Dark::ClauseList* clauseList = (*clauseMap)[lit];
-      clauseList->add(clause);
-    }
+  for (vector<Literals*>::iterator it = nextClauses->begin(); it != nextClauses->end(); it++) {
+    this->add(*it);
   }
+
+  delete nextClauses;
 }
 
 ClauseList* MappedClauseList::getClauses(Literal literal) {

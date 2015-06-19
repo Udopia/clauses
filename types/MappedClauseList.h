@@ -21,6 +21,7 @@ class MappedClauseList: public ClauseList {
 private:
   std::map<Literal, Dark::ClauseList*>* clauseMap;
   int maxVar;
+  void newVar(int var);
 
 public:
   MappedClauseList();

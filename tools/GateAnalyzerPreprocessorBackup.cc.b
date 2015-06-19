@@ -212,11 +212,6 @@ Literals* GateAnalyzer::getNextClause(ClauseList* list,
  * 3. in the end forge together all selected root-clauses by one unit that implies them all
  */
 void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
-  if (method == PURE) {
-    this->analyzeEncodingWithPureDecomposition(tries);
-    return;
-  }
-
   ClauseList* roots = new ClauseList();
   ClauseList* units = clauses->getByCriteria(createUnitFilter());
 
@@ -259,6 +254,11 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
     }
     clauses->augment(next, ~root);
   }
+
+  assert(getRoots()->size() == 1 && "now there is exactly one root");
+  assert(
+      getSideProblem()->size() == 0
+          && "all clauses are integrated into the gate-structure");
 
   delete remainder;
 }
@@ -325,84 +325,6 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
   }
 
   delete literals;
-}
-
-/***
- * Algorithm Refinement, after submition to SAT:
- * 1. Conceptually add sth. like pure-decomposition for a better clause-selection heuristic
- *    by always picking the bunch of clauses for the selected literal (based on min-occurence heuristic).
- *    Maybe this make several tries more effective.
- * 2. Still need to implement the optimization of data-structure developed for the paper [O(1) monotonicity-check]
- */
-ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
-  Literal min;
-  int minOcc = INT_MAX;
-  for (int i = 0; i < maxVar(); i++) {
-    Literal lit = mkLit(i, false);
-    int occ = clauses->countOccurence(lit);
-    if (occ != 0 && occ < minOcc) {
-      minOcc = occ;
-      min = lit;
-    }
-    occ = clauses->countOccurence(~lit);
-    if (occ != 0 && occ < minOcc) {
-      minOcc = occ;
-      min = ~lit;
-    }
-  }
-  return clauses->getClauses(min);
-}
-
-void GateAnalyzer::analyzeEncodingWithPureDecomposition(int tries) {
-  ClauseList* roots = new ClauseList();
-  ClauseList* units = clauses->getByCriteria(createUnitFilter());
-
-  Literal root = mkLit(newVar(), false);
-  Literals* unit = new Literals(root);
-  clauses->add(unit);
-  for (unsigned int i = 0; i < units->size(); i++) {
-    clauses->augment(units->get(i), ~root);
-  }
-
-  roots->add(unit);
-  unit->setMarked();
-  analyzeEncoding(root);
-
-  ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
-  for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    ClauseList* onePure = getNextClauses(remainder);
-
-    for (ClauseList::iterator it = onePure->begin(); it != onePure->end(); it++) {
-      Literals* next = *it;
-      next->setMarked();
-      getOrCreateGate(root)->addForwardClause(next);
-      for (Literals::iterator lit = next->begin(); lit != next->end(); lit++) {
-        setParent(root, *lit);
-      }
-      clauses->augment(next, ~root);
-    }
-
-    for (ClauseList::iterator it = onePure->begin(); it != onePure->end(); it++) {
-      Literals* next = *it;
-      for (Literals::iterator lit = next->begin(); lit != next->end(); lit++) {
-        if (*lit != ~root)
-          analyzeEncoding(*lit);
-      }
-    }
-    remainder->dumpByCriteria(createMarkFilter());
-  }
-
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
-    Literals* next = *it;
-    next->setMarked();
-    getOrCreateGate(root)->addForwardClause(next);
-    for (Literals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
-      setParent(root, *it2);
-    }
-    clauses->augment(next, ~root);
-  }
-
-  delete remainder;
 }
 
 bool GateAnalyzer::isLocalFullGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
@@ -535,4 +457,219 @@ bool GateAnalyzer::projectionContains(Var var) {
   }
 }
 
+ClauseList* GateAnalyzer::getAllClauses() {
+  return clauses;
+}
+
+vector<int>* GateAnalyzer::getRecursiveGateOrWidths() {
+  vector<int>* widths = new vector<int>(2 * maxVar() + 2, 0);
+
+  vector<bool>* visited = new vector<bool>(2 * maxVar() + 2, false);
+
+  deque<Literal>* literals = new deque<Literal>();
+  literals->push_back(getRoots()->getFirst()->getFirst());
+
+  while (!literals->empty()) {
+    Literal literal = literals->front();
+    literals->pop_front();
+
+    if ((*visited)[toInt(literal)])
+      continue;
+    (*visited)[toInt(literal)] = true;
+
+    Gate* gate = getGate(literal);
+    if (gate == NULL)
+      continue;
+
+    for (vector<Literal>::iterator it = gate->getInputs()->begin();
+        it != gate->getInputs()->end(); it++) {
+      (*widths)[toInt(*it)] = (*widths)[toInt(literal)]
+          + gate->countAlternatives(*it);
+    }
+  }
+
+  return widths;
+}
+
+void GateAnalyzer::augmentClauses(int minWidth) {
+  int nAugmentedClauses = 0;
+
+  vector<int>* widths = getRecursiveGateOrWidths();
+
+  vector<vector<Literal>*>* dependencies = findConfluentOutputs();
+
+  vector<bool>* visited = new vector<bool>(2 * maxVar() + 2, false);
+
+  deque<Literal>* literals = new deque<Literal>();
+  literals->push_back(getRoots()->getFirst()->getFirst());
+
+  while (!literals->empty()) {
+    Literal literal = literals->front();
+    literals->pop_front();
+
+    if ((*visited)[toInt(literal)])
+      continue;
+    (*visited)[toInt(literal)] = true;
+
+    Gate* gate = getGate(literal);
+    if (gate == NULL)
+      continue;
+
+    literals->insert(literals->end(), gate->getInputs()->begin(),
+        gate->getInputs()->end());
+
+    ClauseList* fwd = gate->getForwardClauses();
+    ClauseList* bwd = gate->getBackwardClauses();
+    vector<Literal>* deps = (*dependencies)[toInt(literal)];
+    if (deps->size() > 0 && (*widths)[toInt(literal)] >= minWidth) {
+      for (ClauseList::iterator it = fwd->begin(); it != fwd->end(); it++) {
+        Literals* cl = *it;
+        cl->addAll(deps);
+        nAugmentedClauses++;
+      }
+      for (ClauseList::iterator it = bwd->begin(); it != bwd->end(); it++) {
+        Literals* cl = *it;
+        cl->addAll(deps);
+        nAugmentedClauses++;
+      }
+    }
+  }
+
+  fprintf(stderr, "Min Width is %i -> Number of Augmented Clauses: %i\n",
+      minWidth, nAugmentedClauses);
+}
+
+vector<vector<Literal>*>* GateAnalyzer::findConfluentOutputs() {
+  vector<vector<Literal>*>* dependencies = new vector<vector<Literal>*>(
+      2 * maxVar() + 2, NULL);
+  vector<bool>* visited = new vector<bool>(2 * maxVar() + 2, false);
+
+  deque<Literal>* literals = new deque<Literal>();
+  Literal root = getRoots()->getFirst()->getFirst();
+  literals->push_back(root);
+  (*dependencies)[toInt(root)] = new vector<Literal>();
+
+  vector<Literal>* temp = new vector<Literal>(maxVar());
+
+  while (!literals->empty()) {
+    Literal literal = literals->front();
+    literals->pop_front();
+    (*visited)[toInt(literal)] = true;
+
+    Gate* gate = getGate(literal);
+    if (gate == NULL)
+      continue;
+
+    // add the intersection of all parents' dependencies as local dependencies
+    vector<Literal>* parents = getParents(literal);
+
+    if (parents->size() > 0) {
+      vector<Literal>* deps = new vector<Literal>();
+
+      deps->push_back(~(*parents)[0]);
+      deps->insert(deps->end(), (*dependencies)[toInt((*parents)[0])]->begin(),
+          (*dependencies)[toInt((*parents)[0])]->end());
+
+      for (vector<Literal>::iterator p = parents->begin() + 1;
+          p != parents->end(); p++) {
+        temp->clear();
+        vector<Literal>* pdeps = (*dependencies)[toInt(*p)];
+
+        set_intersection(pdeps->begin(), pdeps->end(), deps->begin(),
+            deps->end(), std::back_inserter(*temp));
+
+        deps->clear();
+        deps->insert(deps->begin(), temp->begin(), temp->end());
+      }
+
+      sort(deps->begin(), deps->end());
+      (*dependencies)[toInt(literal)] = deps;
+    }
+
+    // only add inputs, that have all parents visited
+    vector<Literal>* inputs = gate->getInputs();
+    for (vector<Literal>::iterator it = inputs->begin(); it != inputs->end();
+        it++) {
+      bool allParentsVisited = true;
+      vector<Literal>* parents = getParents(*it);
+      for (vector<Literal>::iterator it2 = parents->begin();
+          it2 != parents->end(); it2++) {
+        if (!(*visited)[toInt(*it2)]) {
+          allParentsVisited = false;
+          break;
+        }
+      }
+      if (allParentsVisited)
+        literals->push_back(*it);
+    }
+  }
+
+  delete literals;
+
+  return dependencies;
+}
+
+ClauseList* GateAnalyzer::getSideProblem() {
+  ClauseList* list = clauses->getByCriteria(
+      createNotFilter(createMarkFilter()));
+  D1(printf("SideProblem size = %i (of %i)\n", list->size(), clauses->size());)
+  D1(list->print(stderr); fprintf(stderr, "\n");)
+  return list;
+}
+
+ClauseList* GateAnalyzer::getGateProblem() {
+  ClauseList* list = clauses->getByCriteria(createMarkFilter());
+  D1(printf("GateProblem size = %i (of %i)\n", list->size(), clauses->size());)
+  D1(list->print(stderr); fprintf(stderr, "\n");)
+  return list;
+}
+
+ClauseList* GateAnalyzer::getPrunedGateProblem(Literals* inputModel) {
+  ClauseList* list = new ClauseList();
+  FixedSizeLiterals* model = new FixedSizeLiterals(inputModel->size(),
+      inputModel);
+
+  vector<bool> visited(2 * inputModel->size(), false);
+
+  // init roots
+  ClauseList* roots = clauses->getByCriteria(createUnitFilter());
+  vector<Literal>* literals = new vector<Literal>();
+  for (unsigned int i = 0; i < roots->size(); i++) {
+    Literals* root = roots->get(i);
+    list->add(root);
+    literals->push_back(root->getFirst());
+  }
+
+  // traverse dag
+  for (vector<Literal>::iterator it = literals->begin(); it != literals->end();
+      it++) {
+    Literal literal = *it;
+    Gate* gate = getGate(literal);
+
+    if (gate == NULL)
+      continue;
+
+    if (model->satisfies(literal) || !gate->isMonotonous()) {
+      list->addAll(gate->getForwardClauses());
+      vector<Literal>* children = getInputs(literal);
+      for (vector<Literal>::iterator child = children->begin();
+          child != children->end(); child++) {
+        if (!visited[toInt(*child)]) {
+          literals->push_back(*child);
+          visited[toInt(literal)] = true;
+        }
+      }
+    } else {
+    D1(printf("PRUNING AT %s%i\n", sign(literal) ? "-" : "", var(literal)+1);)
+  }
+}
+
+delete literals;
+delete roots;
+delete model;
+
+D1(printf("Pruned GateProblem size = %i\n", list->size());)
+
+return list;
+}
 }
