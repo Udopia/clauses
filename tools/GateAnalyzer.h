@@ -54,14 +54,11 @@ public:
   vector<Literal>* getParents(Literal child);
   int countParents(Literal child);
   bool hasParents(Literal child);
-  ClauseList* getGateClauses(Literal Literaleral);
+  ClauseList* getGateClauses(Literal literal);
 
   void setProjection(Projection* projection);
   bool projectionContains(Var var);
 
-  ClauseList* getSideProblem();
-  ClauseList* getGateProblem();
-  ClauseList* getPrunedGateProblem(Literals* model);
   ClauseList* getClauses() {
     return (ClauseList*)clauses;
   }
@@ -79,6 +76,8 @@ private:
   map<Literal, vector<Literal>*>* parents;
 
   vector<Gate*>* gates;
+
+  //Literals root;
 
   Projection* projection;
 

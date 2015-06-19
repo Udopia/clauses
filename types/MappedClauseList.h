@@ -30,7 +30,7 @@ public:
   void augment(Literals* clause, Literal lit);
   void augmentAll(Literal lit);
 
-  int MappedClauseList::newVar() {
+  int newVar() {
     Literal lit = mkLit(++max_var, false);
     (*clauseMap)[lit] = new Dark::ClauseList();
     (*clauseMap)[~lit] = new Dark::ClauseList();
@@ -46,7 +46,7 @@ public:
   ClauseList* getClauses(Literal literal);
   ClauseList* getFiltered(Literal literal, bool stripVisited, bool stripBackpointers);
 
-  void MappedClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter);
+  void dumpByCriteria(unique_ptr<ClauseFilter> filter);
 
   int countOccurence(Literal literal);
 };

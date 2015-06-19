@@ -95,7 +95,7 @@ Gate* GateAnalyzer::getOrCreateGate(Literal output) {
     return gate;
   } else {
     assert(gate == NULL && "gate must not exist");
-    gate = new Gate(output, new ClauseList(), new ClauseList);
+    gate = new Gate(output, new ClauseList(), new ClauseList());
     (*gates)[var(output)] = gate;
     return gate;
   }
@@ -147,8 +147,7 @@ void GateAnalyzer::unsetParent(Literal parent) {
   }
 }
 
-Literals* GateAnalyzer::getNextClause(ClauseList* list,
-    RootSelectionMethod method) {
+Literals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
   switch (method) {
   case FIRST_CLAUSE: {
     return list->getFirst();
@@ -171,20 +170,23 @@ Literals* GateAnalyzer::getNextClause(ClauseList* list,
   case MIN_OCCURENCE: {
     Literal min;
     int minOcc = INT_MAX;
-    for (int i = 0; i < clauses->maxVar(); i++) {
+    // TODO: should work without mappedclauselist
+    MappedClauseList* mlist = new MappedClauseList();
+    mlist->addAll(list);
+    for (int i = 0; i < list->maxVar(); i++) {
       Literal lit = mkLit(i, false);
-      int occ = clauses->countOccurence(lit);
+      int occ = mlist->countOccurence(lit);
       if (occ != 0 && occ < minOcc) {
         minOcc = occ;
         min = lit;
       }
-      occ = clauses->countOccurence(~lit);
+      occ = mlist->countOccurence(~lit);
       if (occ != 0 && occ < minOcc) {
         minOcc = occ;
         min = ~lit;
       }
     }
-    return clauses->getClauses(min)->getFirst();
+    return mlist->getClauses(min)->getFirst();
   }
   default:
     return list->getLast();
@@ -205,11 +207,9 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
     return;
   }
 
-  ClauseList* roots = new ClauseList();
   ClauseList* units = clauses->getByCriteria(createUnitFilter());
 
   Literal root = mkLit(clauses->newVar(), false);
-
   (*parents)[mkLit(var(root), false)] = new vector<Literal>();
   (*parents)[mkLit(var(root), true)] = new vector<Literal>();
   gates->push_back(NULL);
@@ -220,7 +220,6 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
     clauses->augment(units->get(i), ~root);
   }
 
-  roots->add(unit);
   unit->setMarked();
   analyzeEncoding(root);
 
@@ -242,15 +241,14 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
     remainder->dumpByCriteria(createMarkFilter());
   }
 
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end();
-      it++) {
+  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
     Literals* next = *it;
     next->setMarked();
+    clauses->augment(next, ~root);
     getOrCreateGate(root)->addForwardClause(next);
     for (Literals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
       setParent(root, *it2);
     }
-    clauses->augment(next, ~root);
   }
 
   delete remainder;
@@ -277,10 +275,8 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
 
     Gate* gate = NULL;
 
-    ClauseList* fwd = clauses->getClauses(~output)->getByCriteria(
-        createNoMarkFilter());
-    ClauseList* bwd = clauses->getClauses(output)->getByCriteria(
-        createNoMarkFilter());
+    ClauseList* fwd = clauses->getClauses(~output)->getByCriteria(createNoMarkFilter());
+    ClauseList* bwd = clauses->getClauses(output)->getByCriteria(createNoMarkFilter());
 
     D1(
         fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);
