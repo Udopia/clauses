@@ -19,6 +19,7 @@ namespace Dark {
  */
 ClauseList::ClauseList() {
   clauses = new vector<Literals*>();
+  max_var = -1;
 }
 
 /**

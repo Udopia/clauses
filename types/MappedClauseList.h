@@ -20,8 +20,6 @@ class Literals;
 class MappedClauseList: public ClauseList {
 private:
   std::map<Literal, Dark::ClauseList*>* clauseMap;
-  int maxVar;
-  void newVar(int var);
 
 public:
   MappedClauseList();
@@ -32,14 +30,23 @@ public:
   void augment(Literals* clause, Literal lit);
   void augmentAll(Literal lit);
 
+  int MappedClauseList::newVar() {
+    Literal lit = mkLit(++max_var, false);
+    (*clauseMap)[lit] = new Dark::ClauseList();
+    (*clauseMap)[~lit] = new Dark::ClauseList();
+    return max_var;
+  }
+
+  void addVarsUntil(Var v) {
+    while (max_var < v) {
+      newVar();
+    }
+  }
+
   ClauseList* getClauses(Literal literal);
   ClauseList* getFiltered(Literal literal, bool stripVisited, bool stripBackpointers);
 
   void MappedClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter);
-
-  int nVars() {
-    return this->maxVar + 1;
-  }
 
   int countOccurence(Literal literal);
 };

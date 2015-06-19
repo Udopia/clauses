@@ -21,10 +21,10 @@ namespace Dark {
 class ClauseList {
 private:
   typedef std::vector<Literals*> InternalClauseList;
-  int max_var = 0;
 
 protected:
   InternalClauseList* clauses;
+  int max_var = 0;
 
 public:
   typedef InternalClauseList::iterator iterator;
@@ -42,8 +42,14 @@ public:
   unsigned int size();
 
   int maxVar() { return max_var; }
+  virtual int newVar() { return ++max_var; }
+  void addVarsUntil(Var v) {
+    while (max_var < v) {
+      newVar();
+    }
+  }
 
-  int countVariables() {
+  int countUsedVariables() {
     vector<bool> used(max_var+1, false);
     for (iterator it = begin(); it != end(); it++) {
       for (Literals::iterator lit = (*it)->begin(); lit != (*it)->end(); lit++) {

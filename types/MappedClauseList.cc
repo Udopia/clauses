@@ -12,7 +12,7 @@ namespace Dark {
 
 MappedClauseList::MappedClauseList() {
   clauseMap = new std::map<Literal, Dark::ClauseList*>();
-  maxVar = -1;
+  max_var = -1;
 }
 
 MappedClauseList::~MappedClauseList() {
@@ -22,39 +22,27 @@ MappedClauseList::~MappedClauseList() {
   delete clauseMap;
 }
 
-void MappedClauseList::newVar(int var) {
-	while (maxVar < var) {
-		maxVar++;
-		Literal lit = mkLit(maxVar, false);
-	  (*clauseMap)[lit] = new Dark::ClauseList();
-	  (*clauseMap)[~lit] = new Dark::ClauseList();
-	}
-}
-
 void MappedClauseList::add(Literals* clause) {
+  addVarsUntil(clause->maxVar());
   ClauseList::add(clause);
   // update clause map
   for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
     Literal lit = *it;
-
-    newVar(var(lit));
-
-    Dark::ClauseList* clauseList = (*clauseMap)[lit];
-    clauseList->add(clause);
+    (*clauseMap)[lit]->add(clause);
   }
 }
 
 void MappedClauseList::augment(Literals* clause, Literal lit) {
   clause->add(lit);
 
-  newVar(var(lit));
+  addVarsUntil(var(lit));
 
   // update occurence-list
   (*clauseMap)[lit]->add(clause);
 }
 
 void MappedClauseList::augmentAll(Literal lit) {
-  newVar(var(lit));
+  addVarsUntil(var(lit));
 
   for (iterator it = begin(); it != end(); it++) {
     Literals* cl = *it;
@@ -77,7 +65,7 @@ void MappedClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
 
   clauses = new vector<Literals*>();
   clauseMap = new std::map<Literal, Dark::ClauseList*>();
-  maxVar = -1;
+  max_var = -1;
 
   for (vector<Literals*>::iterator it = nextClauses->begin(); it != nextClauses->end(); it++) {
     this->add(*it);

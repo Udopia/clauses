@@ -48,9 +48,10 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection,
   this->full_eq_detection = full_eq_detection;
 
   gates = new vector<Gate*>();
-
-  for (int i = 0; i < clauses->nVars(); i++) {
-    newVar();
+  for (int i = 0; i <= clauses->maxVar(); i++) {
+    (*parents)[mkLit(i, false)] = new vector<Literal>();
+    (*parents)[mkLit(i, true)] = new vector<Literal>();
+    gates->push_back(NULL);
   }
 }
 
@@ -73,19 +74,6 @@ ClauseList* GateAnalyzer::getGateClauses(Literal literal) {
   if (gate == NULL || gate->getOutput() != literal)
     return NULL;
   return gate->getForwardClauses();
-}
-
-int GateAnalyzer::maxVar() {
-  D1(fprintf(stderr, "%i\n", max_var);)
-  return max_var;
-}
-
-int GateAnalyzer::newVar() {
-  max_var++;
-  (*parents)[mkLit(max_var, false)] = new vector<Literal>();
-  (*parents)[mkLit(max_var, true)] = new vector<Literal>();
-  gates->push_back(NULL);
-  return max_var;
 }
 
 ClauseList* GateAnalyzer::getRoots() {
@@ -183,7 +171,7 @@ Literals* GateAnalyzer::getNextClause(ClauseList* list,
   case MIN_OCCURENCE: {
     Literal min;
     int minOcc = INT_MAX;
-    for (int i = 0; i < maxVar(); i++) {
+    for (int i = 0; i < clauses->maxVar(); i++) {
       Literal lit = mkLit(i, false);
       int occ = clauses->countOccurence(lit);
       if (occ != 0 && occ < minOcc) {
@@ -220,7 +208,12 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
   ClauseList* roots = new ClauseList();
   ClauseList* units = clauses->getByCriteria(createUnitFilter());
 
-  Literal root = mkLit(newVar(), false);
+  Literal root = mkLit(clauses->newVar(), false);
+
+  (*parents)[mkLit(var(root), false)] = new vector<Literal>();
+  (*parents)[mkLit(var(root), true)] = new vector<Literal>();
+  gates->push_back(NULL);
+
   Literals* unit = new Literals(root);
   clauses->add(unit);
   for (unsigned int i = 0; i < units->size(); i++) {
@@ -337,7 +330,7 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
 ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
   Literal min;
   int minOcc = INT_MAX;
-  for (int i = 0; i < maxVar(); i++) {
+  for (int i = 0; i < clauses->maxVar(); i++) {
     Literal lit = mkLit(i, false);
     int occ = clauses->countOccurence(lit);
     if (occ != 0 && occ < minOcc) {
@@ -357,7 +350,12 @@ void GateAnalyzer::analyzeEncodingWithPureDecomposition(int tries) {
   ClauseList* roots = new ClauseList();
   ClauseList* units = clauses->getByCriteria(createUnitFilter());
 
-  Literal root = mkLit(newVar(), false);
+  Literal root = mkLit(clauses->newVar(), false);
+
+  (*parents)[mkLit(var(root), false)] = new vector<Literal>();
+  (*parents)[mkLit(var(root), true)] = new vector<Literal>();
+  gates->push_back(NULL);
+
   Literals* unit = new Literals(root);
   clauses->add(unit);
   for (unsigned int i = 0; i < units->size(); i++) {

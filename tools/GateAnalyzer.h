@@ -45,7 +45,6 @@ public:
   /**
    * Access Gate-Structure
    */
-  int maxVar();
   ClauseList* getRoots();
   Gate* getGate(Literal output);
   Gate* getOrCreateGate(Literal output);
@@ -63,33 +62,28 @@ public:
   ClauseList* getSideProblem();
   ClauseList* getGateProblem();
   ClauseList* getPrunedGateProblem(Literals* model);
-  ClauseList* getAllClauses();
-
-  ClauseList* getPGClauses(Literal root, bool monotonous);
-  ClauseList* getPGClauses();
+  ClauseList* getClauses() {
+    return (ClauseList*)clauses;
+  }
 
   vector<vector<Literal>*>* findConfluentOutputs();
   vector<int>* getRecursiveGateOrWidths();
   void augmentClauses(int minWidth = 0);
 
+
 private:
   MappedClauseList* clauses;
-  vector<bool>* visited;
 
   MinisatSolver* minisat;
 
   map<Literal, vector<Literal>*>* parents;
 
-  // store gates by output-variable
   vector<Gate*>* gates;
 
   Projection* projection;
 
   bool use_refinement = false;
   int full_eq_detection = 0;
-  int max_var = -1;
-
-  int newVar();
 
   void analyzeEncoding(Literal root);
 
