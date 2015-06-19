@@ -34,6 +34,8 @@ public:
   ClauseList* getClauses(Literal literal);
   ClauseList* getFiltered(Literal literal, bool stripVisited, bool stripBackpointers);
 
+  void MappedClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter);
+
   int nVars() {
     return this->maxVar + 1;
   }
