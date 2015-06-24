@@ -1,0 +1,39 @@
+digraph {
+  label="Extracted Gate-Structure From CNF"
+  N16 [label=9, shape=triangle]
+  N14 [label=8, shape=triangle]
+  N19 [label="" shape=point]
+  N14->N19
+  N12 [label=7, shape=triangle]
+  N0 [label=1, shape=circle]
+  N12->N0
+  N8 [label=5, shape=triangle]
+  N20 [label="" shape=point]
+  N8->N20
+  N2 [label=2, shape=circle]
+  N20->N2
+  N4 [label=3, shape=circle]
+  N20->N4
+  N12->N8
+  N19->N12
+  N10 [label=6, shape=triangle]
+  N6 [label=4, shape=circle]
+  N10->N6
+  N10->N8
+  N19->N10
+  N16->N14
+  subgraph notes {
+    node [style=filled, color=grey]
+    edge [dir=none]
+    N21 [shape=note label="(-5,2,3)\n---\n"]
+    N8 -> N21 [style=dotted]
+    N22 [shape=note label="(-6,4)\n(-6,5)\n---\n"]
+    N10 -> N22 [style=dotted]
+    N23 [shape=note label="(-7,1)\n(-7,5)\n---\n"]
+    N12 -> N23 [style=dotted]
+    N24 [shape=note label="(-8,7,6)\n---\n"]
+    N14 -> N24 [style=dotted]
+    N25 [shape=note label="(8,-9)\n---\n"]
+    N16 -> N25 [style=dotted]
+  }
+}

@@ -1,0 +1,23 @@
+Auswirkung von Coprozessor auf folgende qualitative Merkmale (nach Metriken aus der Schaltkreiswelt suchen)
+- Anteil der markierten Klauseln an allen Klauseln
+- Absolute Anzahl markierter Klauseln
+- Baumtiefe (maximaler Pfad)
+- Breitensuche (kürzeste Pfad von der Wurzel entferntester Eingabe)
+- Anzahl der Inputs im ganzen Schaltkreis
+- Anzahl Inputs per Gate (min, max, avg) mit und ohne oberstes Gate
+[- aig2cnf: Klauseln, Variablen und deren Verhältnis (und andere CNF-Features)]
+
+1. Heuristiken 
+- übriggebliebene größte Variable als nächster Output
+
+2. Präprozessortechnik
+- Klauseln erweitern mit struktuell darüberliegenden Output-Variablen
+
+3. Minisat beschleunigen
+- Blocking Literal in Propagation erweitern
+
+4. GateAnalyzer erweitern:
+- Breitensuchentiefe von Inputs
+- Teilbaumtiefe von Outputs
+- Anzahl der Klauseln pro Teilbaum
+- Auf Unabhängigkeit achten

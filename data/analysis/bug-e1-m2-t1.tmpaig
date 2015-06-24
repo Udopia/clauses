@@ -1,0 +1,23 @@
+usage: cnfdd [-h|-t] src dst cmd [<cmdopt> ...]
+
+  -h     print this command line option summary
+  -t     thorough mode, e.g. iterate same widths multiple times
+  -m     mask out signals from exit code
+  -c     compute clausal core (do not shrink)
+  -q     quantify explicitly even outer-most existential variables
+  -r     remove options
+  -e <e> set expected exit code to <e>
+
+  src    file name of an existing CNF in DIMACS or QDIMACS format
+  dst    file name of generated minimized CNF
+  cmd    command to debug (expects a CNF file as argument)
+
+The delta debugger copies 'src' to 'dst' and tries to remove
+as many clauses and literals without changing the exit code
+of 'cmd dst'.  Then unused variables are removed, as long the
+exit code does not change.
+
+Comments before the header are scanned for option value pairs
+of the form '--<option-name>=<integer-value>'.  These are kept
+in the reduced and intermediate files as well and delta
+debugged towards 0.

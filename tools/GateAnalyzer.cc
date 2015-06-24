@@ -26,7 +26,7 @@
 #include "../types/FixedSizeLiterals.h"
 
 #define VERBOSITY 0
-#include "../debug.h"
+#include "../misc/debug.h"
 
 namespace Dark {
 

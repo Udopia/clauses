@@ -1,0 +1,14 @@
+digraph {
+  label="Extracted Gate-Structure From CNF"
+  N8 [label=5, shape=triangle]
+  N6 [label=4, shape=triangle]
+  N0 [label=1, shape=circle]
+  N6->N0
+  N8->N6
+  N11 [label="" shape=point]
+  N8->N11
+  N5 [label=-3, shape=circle]
+  N11->N5
+  N2 [label=2, shape=circle]
+  N11->N2
+}
