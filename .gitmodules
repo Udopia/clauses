@@ -1,0 +1,3 @@
+[submodule "minisat/solver"]
+	path = minisat/solver
+	url = https://github.com/niklasso/minisat.git
