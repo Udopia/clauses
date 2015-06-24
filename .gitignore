@@ -1,0 +1,6 @@
+*.o
+*.d
+cnf2aig
+cnf2dot
+geninp
+metrics

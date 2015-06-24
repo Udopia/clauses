@@ -7,8 +7,8 @@ ALLOBJS = $(SRCS:.cc=.o)
 OBJS = $(filter-out $(MAINS), $(ALLOBJS))
 DEPS = $(SRCS:.cc=.d)
 
-MINI = -DMINISAT_TYPES=1 -I../minisat
-MINI2 = -L../minisat/build/release/lib -lminisat
+MINI = -DMINISAT_TYPES=1 -Iminisat/solver
+MINI2 = -Lminisat/solver/build/release/lib -lminisat
 CFLAGS = $(MINI) -D__GXX_EXPERIMENTAL_CXX0X__ -D__STDC_CONSTANT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -O3 -Wall -c -fmessage-length=0 -std=c++0x -fpermissive
 #CFLAGS = $(MINI) -D__GXX_EXPERIMENTAL_CXX0X__ -D__STDC_CONSTANT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -g -Wall -c -fmessage-length=0 -std=c++0x -fpermissive
 
