@@ -1,0 +1,17 @@
+In order to BUILD the tools in this repository:
+
+1. Navigate to the directory 'minisat/solver' of the submodule Minsat and run the following three commands: 
+  git submodule init 
+  git submodule update
+  make
+2. Navigate back to the root of the repository and run:
+  make
+
+You get 4 EXECUTABLES that are all based on structure analysis in terms of nested gates:
+
+1. cnf2aig: outputs the result in the AIGER format
+2. cnf2dot: outputs the result as a graph in the graphviz format
+3. metrics: outputs some metrics on the recognized structure
+4. geninp: outputs the input variables of the recognized nested gates structure
+
+
