@@ -41,6 +41,7 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection, bool u
   }
 
   parents = new map<Literal, vector<Literal>*>();
+  inputs = new map<Literal, bool>();
   projection = new Projection();
 
   this->use_refinement = use_refinement;
@@ -56,6 +57,8 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection, bool u
   for (int i = 0; i <= clauses->maxVar(); i++) {
     (*parents)[mkLit(i, false)] = new vector<Literal>();
     (*parents)[mkLit(i, true)] = new vector<Literal>();
+    (*inputs)[mkLit(i, false)] = false;
+    (*inputs)[mkLit(i, true)] = false;
     gates->push_back(NULL);
   }
 
@@ -157,6 +160,19 @@ void GateAnalyzer::unsetParent(Literal parent) {
     outputs->erase(std::remove(outputs->begin(), outputs->end(), parent),
         outputs->end());
   }
+}
+
+/**
+ * Globally remember input polarities for (fast) monotonicity detection
+ */
+void GateAnalyzer::setAsInput(Literal literal) {
+  (*inputs)[literal] = true;
+}
+bool GateAnalyzer::isUsedAsInput(Literal literal) {
+  return (*inputs)[literal];
+}
+bool GateAnalyzer::isMonotonousInput(Var var) {
+  return !isUsedAsInput(mkLit(var, false)) || !isUsedAsInput(mkLit(var, true));
 }
 
 /***
@@ -295,7 +311,7 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
     )
 
     if (fwd->size() > 0 && bwd->isBlockedBy(output, fwd)) {
-      if (isMonotonousInput(output)) {
+      if (isMonotonousInput(var(output))) {
         D1(fprintf(stderr, "Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
         gate = defGate(output, fwd, bwd);
       } else { // non-monotonous
@@ -314,8 +330,7 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
     }
 
     if (gate != NULL) {
-      literals->insert(literals->end(), gate->getInputs()->begin(),
-          gate->getInputs()->end());
+      literals->insert(literals->end(), gate->getInputs()->begin(), gate->getInputs()->end());
     } else {
       delete bwd;
       delete fwd;
@@ -365,42 +380,6 @@ void GateAnalyzer::analyzeEncodingWithPureDecomposition(int tries) {
   }
 
   delete remainder;
-}
-
-bool GateAnalyzer::isLocalFullGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
-  if (fwd->size() > 3 || fwd->maxClauseSize() > 4)
-      return false;
-
-  MinisatSolver* minisat = new MinisatSolver(bwd);
-
-  int i = 0;
-  vector<Literals*> cubes(fwd->size() + 1);
-  cubes[i] = new Literals(~output);
-  for (Literals* clause : *fwd) {
-    Literals* cube = clause->allBut(~output);
-    cube->inlineNegate();
-    cubes[++i] = cube;
-  }
-
-  i = 0;
-  vector<int> positions(cubes.size(), 0);
-  vector<int> maxima(cubes.size());
-  for (Literals* cube : cubes) {
-    maxima[i++] = cube->size();
-  }
-
-  Literals* lits = new Literals();
-  do {
-    i = 0;
-    for (Literals* cube : cubes) {
-      lits->add(cube->get(positions[i++]));
-    }
-    if (minisat->isUPConsistent(lits)) {
-      return false;
-    }
-  } while (increment(positions, maxima));
-
-  return true;
 }
 
 bool GateAnalyzer::isFullGateBySemantic(Literal output, ClauseList* fwd) {
@@ -453,9 +432,12 @@ Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
   (*gates)[var(output)] = gate;
 
   vector<Literal>* inputs = gate->getInputs();
-  for (std::vector<Literal>::iterator lit = inputs->begin();
-      lit != inputs->end(); ++lit) {
+  for (std::vector<Literal>::iterator lit = inputs->begin(); lit != inputs->end(); ++lit) {
     setParent(output, *lit);
+    setAsInput(*lit);
+    if (!isMonotonousInput(var(output))) {
+      setAsInput(~(*lit));
+    }
   }
 
   return gate;
@@ -469,14 +451,13 @@ void GateAnalyzer::undefGate(Gate* gate) {
   unsetParent(gate->getOutput());
 }
 
-bool GateAnalyzer::isMonotonousInput(Literal output) {
+bool GateAnalyzer::isLitMonotonousInput(Literal output) {
   if (hasParents(~output)) {
     return false;
   }
 
   vector<Literal>* parents = getParents(output);
-  for (vector<Literal>::iterator it = parents->begin(); it != parents->end();
-      it++) {
+  for (vector<Literal>::iterator it = parents->begin(); it != parents->end(); it++) {
     if (getGate(*it)->hasNonMonotonousParent()) {
       return false;
     }

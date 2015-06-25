@@ -147,9 +147,7 @@ int main(int argc, char** argv) {
 
   ClauseList* clauses = problem->getClauses();
   GateAnalyzer* gates = new GateAnalyzer(clauses, 1);
-  //gates->analyzeEncoding();
   gates->analyzeEncoding(MIN_OCCURENCE, 1);
-//  gates->analyzeEncoding(MAX_ID, 1);
 
   fprintf(stdout, "digraph {\n  label=\"Extracted Gate-Structure From CNF\"\n");
   Literal root = gates->getRoot();

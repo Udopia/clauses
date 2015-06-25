@@ -85,9 +85,6 @@ void setVisited(Literal node) {
 
 void createAnd(Literal output, Literals* cube) {
   AndGate* andGate = new AndGate();
-//  if (std::find(cube->begin(), cube->end(), root) != cube->end()) {
-//    fprintf(stderr, "fuck adolf hitler");
-//  }
   andGate->output = output;
   andGate->conj = cube;
   pands->push_back(andGate);
@@ -272,9 +269,6 @@ void printLit(FILE* out, Literal lit) {
     fprintf(out, "1");
   } else {
     int num = 2+toInt(closeGaps(negOutAdaption(lit)));
-//    if (num == 67040) {
-//      fprintf(stderr, "%i <- %s%i\n", 67040, sign(lit)?"-":"", var(lit));
-//    }
     fprintf(out, "%i", num);
   }
 }
@@ -363,10 +357,6 @@ int main(int argc, char** argv) {
   gates = new GateAnalyzer(clauses, eqd);
   gates->analyzeEncoding(method, tries);
 
-//  if (gates->hasParents(root)) {
-//    fprintf(stderr, "such a shitfuck");
-//  }
-
   maxVariable = gates->getClauses()->maxVar()+1;
 
   literals = new vector<Literal>();
@@ -389,11 +379,9 @@ int main(int argc, char** argv) {
     if (sign(a->output)) (*negativeOutput)[var(a->output)] = true;
   }
 
-  //gates->getClauses()->printDimacs();
-
   // **************
-  // * Print AIG:
-  // ****
+  // ** Print AIG ****
+  // ***************
 
   fprintf(out, "aag %i %i %i %i %i\n", maxVariable+2, (int)inputs->size(), 0, 1, (int)ands->size());
   for (Var var : *inputs) {

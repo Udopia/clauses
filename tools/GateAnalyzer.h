@@ -56,6 +56,10 @@ public:
   bool hasParents(Literal child);
   ClauseList* getGateClauses(Literal literal);
 
+  void setAsInput(Literal literal);
+  bool isUsedAsInput(Literal literal);
+  bool isMonotonousInput(Var var);
+
   void setProjection(Projection* projection);
   bool projectionContains(Var var);
 
@@ -74,6 +78,7 @@ private:
   MinisatSolver* minisat;
 
   map<Literal, vector<Literal>*>* parents;
+  map<Literal, bool>* inputs;
 
   vector<Gate*>* gates;
 
@@ -92,14 +97,12 @@ private:
   Gate* defGate(Literal output, ClauseList* fwd, ClauseList* bwd);
   void undefGate(Gate* gate);
 
-  bool isLocalFullGate(Literal output, ClauseList* fwd, ClauseList* bwd);
-
   bool isFullGateBySemantic(Literal output, ClauseList* fwd);
   bool increment(vector<int>& positions, vector<int> maxima);
 
   bool classifyEncoding(Literal literal);
 
-  bool isMonotonousInput(Literal output);
+  bool isLitMonotonousInput(Literal output);
 
   Literals* getNextClause(ClauseList* list, RootSelectionMethod method);
   ClauseList* getNextClauses(ClauseList* list);
