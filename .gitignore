@@ -4,3 +4,5 @@ cnf2aig
 cnf2dot
 geninp
 metrics
+/Debug/
+/Release/

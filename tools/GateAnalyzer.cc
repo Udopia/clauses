@@ -147,6 +147,35 @@ void GateAnalyzer::unsetParent(Literal parent) {
   }
 }
 
+/***
+ * Algorithm Refinement, after submition to SAT:
+ * 1. Conceptually add sth. like pure-decomposition for a better clause-selection heuristic
+ *    by always picking the bunch of clauses for the selected literal (based on min-occurence heuristic).
+ *    Maybe this make several tries more effective.
+ * 2. Still need to implement the optimization of data-structure developed for the paper [O(1) monotonicity-check]
+ */
+ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
+  Literal min;
+  int minOcc = INT_MAX;
+  // TODO: should work without mappedclauselist
+  MappedClauseList* mlist = new MappedClauseList();
+  mlist->addAll(list);
+  for (int i = 0; i < list->maxVar(); i++) {
+    Literal lit = mkLit(i, false);
+    int occ = mlist->countOccurence(lit);
+    if (occ != 0 && occ < minOcc) {
+      minOcc = occ;
+      min = lit;
+    }
+    occ = mlist->countOccurence(~lit);
+    if (occ != 0 && occ < minOcc) {
+      minOcc = occ;
+      min = ~lit;
+    }
+  }
+  return clauses->getClauses(min);
+}
+
 Literals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
   switch (method) {
   case FIRST_CLAUSE: {
@@ -168,25 +197,7 @@ Literals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod meth
     return result;
   }
   case MIN_OCCURENCE: {
-    Literal min;
-    int minOcc = INT_MAX;
-    // TODO: should work without mappedclauselist
-    MappedClauseList* mlist = new MappedClauseList();
-    mlist->addAll(list);
-    for (int i = 0; i < list->maxVar(); i++) {
-      Literal lit = mkLit(i, false);
-      int occ = mlist->countOccurence(lit);
-      if (occ != 0 && occ < minOcc) {
-        minOcc = occ;
-        min = lit;
-      }
-      occ = mlist->countOccurence(~lit);
-      if (occ != 0 && occ < minOcc) {
-        minOcc = occ;
-        min = ~lit;
-      }
-    }
-    return mlist->getClauses(min)->getFirst();
+    return getNextClauses(list)->getFirst();
   }
   default:
     return list->getLast();
@@ -314,32 +325,6 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
   }
 
   delete literals;
-}
-
-/***
- * Algorithm Refinement, after submition to SAT:
- * 1. Conceptually add sth. like pure-decomposition for a better clause-selection heuristic
- *    by always picking the bunch of clauses for the selected literal (based on min-occurence heuristic).
- *    Maybe this make several tries more effective.
- * 2. Still need to implement the optimization of data-structure developed for the paper [O(1) monotonicity-check]
- */
-ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
-  Literal min;
-  int minOcc = INT_MAX;
-  for (int i = 0; i < clauses->maxVar(); i++) {
-    Literal lit = mkLit(i, false);
-    int occ = clauses->countOccurence(lit);
-    if (occ != 0 && occ < minOcc) {
-      minOcc = occ;
-      min = lit;
-    }
-    occ = clauses->countOccurence(~lit);
-    if (occ != 0 && occ < minOcc) {
-      minOcc = occ;
-      min = ~lit;
-    }
-  }
-  return clauses->getClauses(min);
 }
 
 void GateAnalyzer::analyzeEncodingWithPureDecomposition(int tries) {
