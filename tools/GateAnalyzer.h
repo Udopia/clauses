@@ -45,7 +45,7 @@ public:
   /**
    * Access Gate-Structure
    */
-  ClauseList* getRoots();
+  Literal getRoot();
   Gate* getGate(Literal output);
   Gate* getOrCreateGate(Literal output);
   vector<Literal>* getInputs(Literal parent);
@@ -77,7 +77,7 @@ private:
 
   vector<Gate*>* gates;
 
-  //Literals root;
+  Literal root;
 
   Projection* projection;
 

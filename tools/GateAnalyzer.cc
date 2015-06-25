@@ -30,8 +30,7 @@
 
 namespace Dark {
 
-GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection,
-    bool use_refinement) {
+GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection, bool use_refinement) {
   clauses = new MappedClauseList();
   clauses->addAll(clauseList);
 
@@ -47,11 +46,24 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection,
   this->use_refinement = use_refinement;
   this->full_eq_detection = full_eq_detection;
 
+  // introduce new variable and unit-clause
+  root = mkLit(clauses->newVar(), false);
+  Literals* rootClause = new Literals(root);
+  rootClause->setMarked();
+
+  // create some data-structures for each variable
   gates = new vector<Gate*>();
   for (int i = 0; i <= clauses->maxVar(); i++) {
     (*parents)[mkLit(i, false)] = new vector<Literal>();
     (*parents)[mkLit(i, true)] = new vector<Literal>();
     gates->push_back(NULL);
+  }
+
+  // create artificial root unit-clause and subordinate the existing unit-clauses
+  ClauseList* units = clauses->getByCriteria(createUnitFilter());
+  clauses->add(rootClause); // note: it is important to add the new unit _after_ filtering the existing units
+  for (unsigned int i = 0; i < units->size(); i++) {
+    clauses->augment(units->get(i), ~root);
   }
 }
 
@@ -76,8 +88,8 @@ ClauseList* GateAnalyzer::getGateClauses(Literal literal) {
   return gate->getForwardClauses();
 }
 
-ClauseList* GateAnalyzer::getRoots() {
-  return clauses->getByCriteria(createUnitFilter());
+Literal GateAnalyzer::getRoot() {
+  return root;
 }
 
 Gate* GateAnalyzer::getGate(Literal output) {
@@ -173,7 +185,7 @@ ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
       min = ~lit;
     }
   }
-  return clauses->getClauses(min);
+  return mlist->getClauses(min);
 }
 
 Literals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
@@ -218,20 +230,6 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
     return;
   }
 
-  ClauseList* units = clauses->getByCriteria(createUnitFilter());
-
-  Literal root = mkLit(clauses->newVar(), false);
-  (*parents)[mkLit(var(root), false)] = new vector<Literal>();
-  (*parents)[mkLit(var(root), true)] = new vector<Literal>();
-  gates->push_back(NULL);
-
-  Literals* unit = new Literals(root);
-  clauses->add(unit);
-  for (unsigned int i = 0; i < units->size(); i++) {
-    clauses->augment(units->get(i), ~root);
-  }
-
-  unit->setMarked();
   analyzeEncoding(root);
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
@@ -328,26 +326,11 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
 }
 
 void GateAnalyzer::analyzeEncodingWithPureDecomposition(int tries) {
-  ClauseList* roots = new ClauseList();
-  ClauseList* units = clauses->getByCriteria(createUnitFilter());
 
-  Literal root = mkLit(clauses->newVar(), false);
-
-  (*parents)[mkLit(var(root), false)] = new vector<Literal>();
-  (*parents)[mkLit(var(root), true)] = new vector<Literal>();
-  gates->push_back(NULL);
-
-  Literals* unit = new Literals(root);
-  clauses->add(unit);
-  for (unsigned int i = 0; i < units->size(); i++) {
-    clauses->augment(units->get(i), ~root);
-  }
-
-  roots->add(unit);
-  unit->setMarked();
   analyzeEncoding(root);
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
+
   for (int count = 0; count < tries && remainder->size() > 0; count++) {
     ClauseList* onePure = getNextClauses(remainder);
 

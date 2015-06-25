@@ -192,8 +192,8 @@ int main(int argc, char** argv) {
 
   minDepth = new vector<int>(problem->getDeclNVars(), INT_MAX);
   minDepth2 = new vector<int>(problem->getDeclNVars(), INT_MAX);
-  setDepths(analyzer->getRoots()->getFirst()->getFirst());
-  setDepths2(analyzer->getRoots()->getFirst()->getFirst());
+  setDepths(analyzer->getRoot());
+  setDepths2(analyzer->getRoot());
 
   int maxDepth1 = 0;
   for (vector<int>::iterator it = minDepth->begin(); it != minDepth->end(); it++) {

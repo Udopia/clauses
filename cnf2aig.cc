@@ -369,14 +369,8 @@ int main(int argc, char** argv) {
 
   maxVariable = gates->getClauses()->maxVar()+1;
 
-  ClauseList* roots = gates->getRoots();
-
-//  clauses->printDimacs();
-
-  assert (roots->size() == 1 && "GateAnalyzer must pre-process the formula such that there is exactly one unit-clause");
-
   literals = new vector<Literal>();
-  root = roots->getFirst()->getFirst();
+  root = gates->getRoot();
   literals->push_back(root);
 
   assert(var(root) < maxVariable);

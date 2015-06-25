@@ -152,10 +152,8 @@ int main(int argc, char** argv) {
 //  gates->analyzeEncoding(MAX_ID, 1);
 
   fprintf(stdout, "digraph {\n  label=\"Extracted Gate-Structure From CNF\"\n");
-  ClauseList* roots = gates->getRoots();
-  for (ClauseList::iterator it = roots->begin(); it != roots->end(); it++) {
-    graphviz_create_dag(problem, gates, (*it)->getFirst());
-  }
+  Literal root = gates->getRoot();
+  graphviz_create_dag(problem, gates, root);
   if (verbose) {
     fprintf(stdout, "  subgraph notes {\n");
     fprintf(stdout, "    node [style=filled, color=grey]\n");
