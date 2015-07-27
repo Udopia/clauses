@@ -290,8 +290,8 @@ int main(int argc, char** argv) {
   FILE* out = stdout;
   char* filename = argv[1];
   RootSelectionMethod method = MIN_OCCURENCE;
+  EquivalenceDetectionMethod eq_method = PATTERNS;
   int tries = 1;
-  int eqd = 1;
   bool help = false;
 
   for (int i = 1; i < argc; i++) {
@@ -305,7 +305,12 @@ int main(int argc, char** argv) {
       }
     }
     else if (strcmp(argv[i], "-e") == 0 && i < argc - 1) {
-      eqd = atoi(argv[++i]);
+      int eqd = atoi(argv[++i]);
+      switch (eqd) {
+      case 1: eq_method = PATTERNS; break;
+      case 2: eq_method = SEMANTIC; break;
+      default: eq_method = SKIP;
+      }
     }
     else if (strcmp(argv[i], "-t") == 0 && i < argc - 1) {
       tries = atoi(argv[++i]);
@@ -354,8 +359,8 @@ int main(int argc, char** argv) {
   visitedNodes = new vector<bool>((problem->getRealNVars()+2)*2, false);
 
   ClauseList* clauses = problem->getClauses();
-  gates = new GateAnalyzer(clauses, eqd);
-  gates->analyzeEncoding(method, tries);
+  gates = new GateAnalyzer(clauses);
+  gates->analyzeEncoding(method, eq_method, tries);
 
   maxVariable = gates->getClauses()->maxVar()+1;
 

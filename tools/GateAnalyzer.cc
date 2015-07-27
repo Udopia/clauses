@@ -30,22 +30,15 @@
 
 namespace Dark {
 
-GateAnalyzer::GateAnalyzer(ClauseList* clauseList, int full_eq_detection, bool use_refinement) {
+GateAnalyzer::GateAnalyzer(ClauseList* clauseList) {
   clauses = new MappedClauseList();
   clauses->addAll(clauseList);
-
-  if (full_eq_detection > 1) {
-    minisat = new MinisatSolver(clauses);
-  } else {
-    minisat = NULL;
-  }
 
   parents = new map<Literal, vector<Literal>*>();
   inputs = new map<Literal, bool>();
   projection = new Projection();
 
-  this->use_refinement = use_refinement;
-  this->full_eq_detection = full_eq_detection;
+  minisat = NULL;
 
   // introduce new variable and unit-clause
   root = mkLit(clauses->newVar(), false);
@@ -74,6 +67,13 @@ GateAnalyzer::~GateAnalyzer() {
   freeAllContent();
   delete clauses;
   delete parents;
+}
+
+MinisatSolver* GateAnalyzer::getMinisatSolver() {
+  if (minisat == NULL) {
+    minisat = new MinisatSolver(clauses);
+  }
+  return minisat;
 }
 
 void GateAnalyzer::freeAllContent() {
@@ -204,7 +204,8 @@ ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
   return mlist->getClauses(min);
 }
 
-Literals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
+Literals* GateAnalyzer::getNextClause(ClauseList* list,
+    RootSelectionMethod method) {
   switch (method) {
   case FIRST_CLAUSE: {
     return list->getFirst();
@@ -240,17 +241,12 @@ Literals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod meth
  * 2. if there is still a side-problem and no unit-clause left, select the one containing the biggest variable
  * 3. in the end forge together all selected root-clauses by one unit that implies them all
  */
-void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
-  if (method == PURE) {
-    this->analyzeEncodingWithPureDecomposition(tries);
-    return;
-  }
-
-  analyzeEncoding(root);
+void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDetectionMethod equivalence, int tries) {
+  analyzeEncoding(root, equivalence);
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
   for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    Literals* next = getNextClause(remainder, method);
+    Literals* next = getNextClause(remainder, selection);
 
     next->setMarked();
     getOrCreateGate(root)->addForwardClause(next);
@@ -261,12 +257,13 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
 
     for (Literals::iterator it = next->begin(); it != next->end(); it++) {
       if (*it != ~root)
-        analyzeEncoding(*it);
+        analyzeEncoding(*it, equivalence);
     }
     remainder->dumpByCriteria(createMarkFilter());
   }
 
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
+  for (ClauseList::iterator it = remainder->begin(); it != remainder->end();
+      it++) {
     Literals* next = *it;
     next->setMarked();
     clauses->augment(next, ~root);
@@ -282,8 +279,8 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod method, int tries) {
 /*******
  * Create a DAG starting from a fact. Detect cycles and stop if necessary
  ***/
-void GateAnalyzer::analyzeEncoding(Literal root) {
-  D1(fprintf(stderr, "Root is %s%i\n", sign(root)?"-":"", var(root)+1);)
+void GateAnalyzer::analyzeEncoding(Literal root, EquivalenceDetectionMethod equivalence) {
+  D1(fprintf(stderr, "Root is %s%i\n", sign(root) ? "-" : "", var(root)+1);)
 
   // a queue of literals that grows while checking for implicates
   vector<Literal>* literals = new vector<Literal>();
@@ -314,18 +311,10 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
       if (isMonotonousInput(var(output))) {
         D1(fprintf(stderr, "Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
         gate = defGate(output, fwd, bwd);
-      } else { // non-monotonous
+      } else if (isFullEncoding(output, fwd, bwd, equivalence)){ // non-monotonous
         D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
-        if (this->full_eq_detection > 0 && bwd->matchesFullGatePattern(output, fwd)) {
-          D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
-          gate = defGate(output, fwd, bwd);
-          gate->setHasNonMonotonousParent();
-        }
-        else if (this->full_eq_detection == 2 && isFullGateBySemantic(output, fwd)) {
-          D1(fprintf(stderr, "Gate Detected %s%i\n", sign(output)?"-":"", var(output)+1);)
-          gate = defGate(output, fwd, bwd);
-          gate->setHasNonMonotonousParent();
-        }
+        gate = defGate(output, fwd, bwd);
+        gate->setHasNonMonotonousParent();
       }
     }
 
@@ -340,59 +329,31 @@ void GateAnalyzer::analyzeEncoding(Literal root) {
   delete literals;
 }
 
-void GateAnalyzer::analyzeEncodingWithPureDecomposition(int tries) {
-
-  analyzeEncoding(root);
-
-  ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
-
-  for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    ClauseList* onePure = getNextClauses(remainder);
-
-    for (ClauseList::iterator it = onePure->begin(); it != onePure->end(); it++) {
-      Literals* next = *it;
-      next->setMarked();
-      getOrCreateGate(root)->addForwardClause(next);
-      for (Literals::iterator lit = next->begin(); lit != next->end(); lit++) {
-        setParent(root, *lit);
-      }
-      clauses->augment(next, ~root);
+bool GateAnalyzer::isFullEncoding(Literal output, ClauseList* fwd,
+    ClauseList* bwd, EquivalenceDetectionMethod equivalence) {
+  switch (equivalence) {
+  case PATTERNS:
+    return bwd->matchesFullGatePattern(output, fwd);
+  case SEMANTIC:
+    if (bwd->matchesFullGatePattern(output, fwd)) {
+      return true;
     }
-
-    for (ClauseList::iterator it = onePure->begin(); it != onePure->end(); it++) {
-      Literals* next = *it;
-      for (Literals::iterator lit = next->begin(); lit != next->end(); lit++) {
-        if (*lit != ~root)
-          analyzeEncoding(*lit);
-      }
+    if (fwd->size() > 3 || fwd->maxClauseSize() > 4) {
+      return false;
     }
-    remainder->dumpByCriteria(createMarkFilter());
+    return semanticCheck(output, fwd);
+  case SKIP:
+  default:
+    return false;
   }
-
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
-    Literals* next = *it;
-    next->setMarked();
-    getOrCreateGate(root)->addForwardClause(next);
-    for (Literals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
-      setParent(root, *it2);
-    }
-    clauses->augment(next, ~root);
-  }
-
-  delete remainder;
 }
 
-bool GateAnalyzer::isFullGateBySemantic(Literal output, ClauseList* fwd) {
-  if (fwd->size() > 3 || fwd->maxClauseSize() > 4)
-    return false;
-
+bool GateAnalyzer::semanticCheck(Literal output, ClauseList* fwd) {
   int i = 0;
   vector<Literals*> cubes(fwd->size() + 1);
-  cubes[i] = new Literals(~output);
+  cubes[0] = new Literals(~output);
   for (Literals* clause : *fwd) {
-    Literals* cube = clause->allBut(~output);
-    cube->inlineNegate();
-    cubes[++i] = cube;
+    cubes[++i] = clause->allBut(~output);
   }
 
   i = 0;
@@ -402,13 +363,13 @@ bool GateAnalyzer::isFullGateBySemantic(Literal output, ClauseList* fwd) {
     maxima[i++] = cube->size();
   }
 
-  Literals* lits = new Literals();
+  Literals* assumptions = new Literals();
   do {
     i = 0;
     for (Literals* cube : cubes) {
-      lits->add(cube->get(positions[i++]));
+      assumptions->add(cube->get(positions[i++]));
     }
-    if (minisat->isUPConsistent(lits)) {
+    if (getMinisatSolver()->isUPConsistent(assumptions)) {
       return false;
     }
   } while (increment(positions, maxima));
@@ -432,7 +393,8 @@ Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
   (*gates)[var(output)] = gate;
 
   vector<Literal>* inputs = gate->getInputs();
-  for (std::vector<Literal>::iterator lit = inputs->begin(); lit != inputs->end(); ++lit) {
+  for (std::vector<Literal>::iterator lit = inputs->begin();
+      lit != inputs->end(); ++lit) {
     setParent(output, *lit);
     setAsInput(*lit);
     if (!isMonotonousInput(var(output))) {
@@ -457,7 +419,8 @@ bool GateAnalyzer::isLitMonotonousInput(Literal output) {
   }
 
   vector<Literal>* parents = getParents(output);
-  for (vector<Literal>::iterator it = parents->begin(); it != parents->end(); it++) {
+  for (vector<Literal>::iterator it = parents->begin(); it != parents->end();
+      it++) {
     if (getGate(*it)->hasNonMonotonousParent()) {
       return false;
     }

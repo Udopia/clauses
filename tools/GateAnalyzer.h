@@ -34,13 +34,16 @@ enum RootSelectionMethod {
   FIRST_CLAUSE, MAX_ID, MIN_OCCURENCE, PURE
 };
 
+enum EquivalenceDetectionMethod {
+  SKIP, PATTERNS, SEMANTIC
+};
+
 class GateAnalyzer {
 public:
-  GateAnalyzer(ClauseList* clauseList, int full_eq_detection = 0, bool use_refinement = false);
+  GateAnalyzer(ClauseList* clauseList);
   virtual ~GateAnalyzer();
 
-  void analyzeEncoding(RootSelectionMethod method, int tries);
-  void analyzeEncodingWithPureDecomposition(int tries);
+  void analyzeEncoding(RootSelectionMethod selection, EquivalenceDetectionMethod eqivalence, int tries);
 
   /**
    * Access Gate-Structure
@@ -86,10 +89,9 @@ private:
 
   Projection* projection;
 
-  bool use_refinement = false;
-  int full_eq_detection = 0;
+  MinisatSolver* getMinisatSolver();
 
-  void analyzeEncoding(Literal root);
+  void analyzeEncoding(Literal root, EquivalenceDetectionMethod eqivalence);
 
   void setParent(Literal parent, Literal child);
   void unsetParent(Literal parent);
@@ -97,7 +99,8 @@ private:
   Gate* defGate(Literal output, ClauseList* fwd, ClauseList* bwd);
   void undefGate(Gate* gate);
 
-  bool isFullGateBySemantic(Literal output, ClauseList* fwd);
+  bool isFullEncoding(Literal output, ClauseList* fwd, ClauseList* bwd, EquivalenceDetectionMethod equivalence);
+  bool semanticCheck(Literal output, ClauseList* fwd);
   bool increment(vector<int>& positions, vector<int> maxima);
 
   bool classifyEncoding(Literal literal);

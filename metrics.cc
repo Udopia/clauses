@@ -116,8 +116,8 @@ int main(int argc, char** argv) {
 
   char* filename = argv[1];
   RootSelectionMethod method = FIRST_CLAUSE;
+  EquivalenceDetectionMethod eq_method = PATTERNS;
   int tries = 1;
-  int eqd = 0;
   bool help = false;
 
   for (int i = 1; i < argc; i++) {
@@ -131,7 +131,12 @@ int main(int argc, char** argv) {
       }
     }
     else if (strcmp(argv[i], "-e") == 0 && i < argc - 1) {
-      eqd = atoi(argv[++i]);
+      int eqd = atoi(argv[++i]);
+      switch (eqd) {
+      case 1: eq_method = PATTERNS; break;
+      case 2: eq_method = SEMANTIC; break;
+      default: eq_method = SKIP;
+      }
     }
     else if (strcmp(argv[i], "-t") == 0 && i < argc - 1) {
       tries = atoi(argv[++i]);
@@ -166,8 +171,8 @@ int main(int argc, char** argv) {
   ClauseList* clauses = problem->getClauses();
 
   double startTime = cpuTime();
-  analyzer = new GateAnalyzer(clauses, eqd);
-  analyzer->analyzeEncoding(method, tries);
+  analyzer = new GateAnalyzer(clauses);
+  analyzer->analyzeEncoding(method, eq_method, tries);
   double endTime = cpuTime();
 
   int nVars = problem->getDeclNVars();

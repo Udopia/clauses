@@ -38,8 +38,6 @@ public:
   bool hasNonMonotonousParent();
   void setHasNonMonotonousParent();
 
-  int countAlternatives(Literal input);
-
 private:
   Literal output;
   ClauseList* forward;
@@ -47,7 +45,6 @@ private:
 
   bool nonMonotonousParent;
 
-  map<Literal,int>* width;
   vector<Literal>* inputs;
 
 };

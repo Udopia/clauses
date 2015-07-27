@@ -15,7 +15,6 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
   this->output = output;
   this->forward = forward;
   this->backward = backward;
-  this->width = new map<Literal,int>();
   this->nonMonotonousParent = false;
 
   //printf("New Gate with output %s%i\n", sign(output)?"-":"", var(output)+1);
@@ -28,11 +27,6 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
     for (std::vector<Literal>::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
       if (*lit != ~output) {
         inputs->push_back(*lit);
-        if (width->count(*lit) == 0) {
-          (*width)[*lit] = clause->size();
-        } else if ((*width)[*lit] < (int)clause->size()) {
-          (*width)[*lit] = clause->size();
-        }
       }
     }
   }
@@ -42,7 +36,6 @@ Gate::~Gate() {
   delete forward;
   delete backward;
   delete inputs;
-  delete width;
 }
 
 Literal Gate::getOutput() {
@@ -54,11 +47,6 @@ void Gate::addForwardClause(Literals* fwd) {
   for (std::vector<Literal>::iterator lit = fwd->begin(); lit != fwd->end(); ++lit) {
     if (*lit != ~output) {
       inputs->push_back(*lit);
-      if (width->count(*lit) == 0) {
-        (*width)[*lit] = fwd->size();
-      } else if ((*width)[*lit] < (int)fwd->size()) {
-        (*width)[*lit] = fwd->size();
-      }
     }
   }
 }
@@ -97,10 +85,6 @@ bool Gate::hasNonMonotonousParent() {
 
 void Gate::setHasNonMonotonousParent() {
   this->nonMonotonousParent = true;
-}
-
-int Gate::countAlternatives(Literal input) {
-  return (*width)[input];
 }
 
 }
