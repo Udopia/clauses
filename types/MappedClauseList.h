@@ -26,6 +26,7 @@ public:
   virtual ~MappedClauseList();
 
   void add(Literals* clause);
+  void remove(Literals* clause);
 
   void augment(Literals* clause, Literal lit);
   void augmentAll(Literal lit);

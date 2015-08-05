@@ -32,6 +32,15 @@ void MappedClauseList::add(Literals* clause) {
   }
 }
 
+void MappedClauseList::remove(Literals* clause) {
+  ClauseList::remove(clause);
+  // update clause map
+  for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
+    Literal lit = *it;
+    (*clauseMap)[lit]->remove(clause);
+  }
+}
+
 void MappedClauseList::augment(Literals* clause, Literal lit) {
   clause->add(lit);
 

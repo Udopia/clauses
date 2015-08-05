@@ -43,6 +43,11 @@ void ClauseList::add(Literals* clause) {
   clauses->push_back(clause);
 }
 
+void ClauseList::remove(Literals* clause) {
+  (*clauses)[pos(clause)] = getLast();
+  clauses->pop_back();
+}
+
 void ClauseList::addAll(ClauseList* list) {
   for(ClauseList::iterator it = list->begin(); it != list->end(); it++) {
     this->add(*it);
@@ -76,6 +81,13 @@ ClauseList::iterator ClauseList::end() {
 /**
  * Comparative Methods
  */
+int ClauseList::pos(Literals* clause) {
+  for (unsigned int i = 0; i < size(); ++i) {
+    if (get(i) == clause) return i;
+  }
+  return -1;
+}
+
 Literals* ClauseList::find(Literals* clause) {
   for (unsigned int i = 0; i < size(); ++i) {
     if (get(i)->equals(clause)) return get(i);

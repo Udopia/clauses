@@ -35,6 +35,7 @@ public:
   void freeClauses();
 
   virtual void add(Literals* clause);
+  virtual void remove(Literals* clause);
   void addAll(ClauseList* list);
   Literals* get(int i);
   Literals* getFirst();
@@ -66,6 +67,7 @@ public:
   iterator begin();
   iterator end();
 
+  int pos(Literals* clause);
   Literals* find(Literals* clause);
   bool contains(Literals* clause);
 
