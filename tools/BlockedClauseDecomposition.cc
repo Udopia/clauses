@@ -37,6 +37,10 @@ void BlockedClauseDecomposition::decompose() {
   this->small = this->large->removeByCriteria(createUnitFilter());
 }
 
+
+/**
+ * based on SimplifiedArminsBCEliminator
+ */
 ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(MappedClauseList* clauses) {
   std::stack<Literal>* litsToCheck = new std::stack<Literal>();
   vector<bool> notInStack(2 + 2 * clauses->maxVar(), false);
@@ -56,8 +60,13 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(MappedClauseList
     for (ClauseList::iterator it = occurance->begin(); it != occurance->end(); it++) {
       Literals* clause = *it;
       if (clauses->getClauses(~lit)->isBlockedBy(lit, clause)) {
-        //cindex.makeBlockingLiteralFirst(clause, lit);
+        // move blocking literal to the beginning of the list
+        (*clause)[clause->pos(lit)] = (*clause)[0];
+        (*clause)[0] = lit;
+        // move blocked clause to separate list
         blockedClauses->add(clause);
+        clauses->remove(clause);
+        // push all literals to the stack
         for (Literals::iterator iter = clause->begin(); iter != clause->end(); iter++) {
           Literal l = *iter;
           if (notInStack[toInt(~l)]) {
@@ -65,7 +74,6 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(MappedClauseList
             notInStack[toInt(~l)] = false;
           }
         }
-        clauses->remove(clause);
       }
     }
   }

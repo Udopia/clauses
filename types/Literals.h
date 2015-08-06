@@ -63,6 +63,9 @@ public:
   Literal get(int i);
   unsigned int size();
 
+  Literal& operator[] (const int i);
+  int pos(Literal literal);
+
   bool contains(Literal literal);
   bool entails(Literals* clause);
   bool equals(Literals* clause);

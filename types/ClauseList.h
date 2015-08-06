@@ -36,6 +36,7 @@ public:
 
   virtual void add(Literals* clause);
   virtual void remove(Literals* clause);
+
   void addAll(ClauseList* list);
   Literals* get(int i);
   Literals* getFirst();

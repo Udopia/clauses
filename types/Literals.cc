@@ -139,9 +139,22 @@ unsigned int Literals::size() {
   return literals->size();
 }
 
+Literal& Literals::operator[] (const int i) {
+    return (*literals)[i];
+}
+
 /**
  * Comparators
  */
+int Literals::pos(Literal literal) {
+  for (unsigned int i = 0; i < literals->size(); i++) {
+    if ((*literals)[i] == literal) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 bool Literals::contains(Literal literal) {
   return std::find(literals->begin(), literals->end(), literal) != literals->end();
 }
