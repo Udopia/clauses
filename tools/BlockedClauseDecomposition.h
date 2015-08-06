@@ -16,8 +16,8 @@ class MappedClauseList;
 class BlockedClauseDecomposition {
 private:
   ClauseList* clauses;
-  ClauseList* large;
-  ClauseList* small;
+  MappedClauseList* large;
+  MappedClauseList* small;
 public:
   BlockedClauseDecomposition(ClauseList* clauses);
   virtual ~BlockedClauseDecomposition();

@@ -43,9 +43,7 @@ void MappedClauseList::remove(Literals* clause) {
 
 void MappedClauseList::augment(Literals* clause, Literal lit) {
   clause->add(lit);
-
   addVarsUntil(var(lit));
-
   // update occurence-list
   (*clauseMap)[lit]->add(clause);
 }

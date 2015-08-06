@@ -24,17 +24,49 @@ namespace Dark {
 
 BlockedClauseDecomposition::BlockedClauseDecomposition(ClauseList* clauses) {
   this->clauses = clauses;
-  this->large = NULL;
-  this->small = NULL;
+  large = NULL;
+  small = NULL;
 }
 
 BlockedClauseDecomposition::~BlockedClauseDecomposition() {
 }
 
 void BlockedClauseDecomposition::decompose() {
-  this->large = new ClauseList();
-  this->large->addAll(this->clauses);
-  this->small = this->large->removeByCriteria(createUnitFilter());
+  large = new MappedClauseList();
+  large->addAll(this->clauses);
+
+  // Unit Decomposition
+  small = large->removeByCriteria(createUnitFilter());
+
+  // Check Blocked State
+  ClauseList* blocked = eliminateBlockedClauses(large);
+  if (large->size() == 0) { // done
+    delete large;
+    large = blocked;
+    return;
+  }
+  large->addAll(blocked); // revert
+  delete blocked;
+
+  // Remove clauses that are satisfied by unit-prop.
+  for (ClauseList::iterator unit = small->begin(); unit != small->end(); unit++) {
+    Literal lit = (*unit)->getFirst();
+    while (large->getClauses(lit)->size() > 0) {
+      large->remove(large->getClauses(lit)->getLast());
+    }
+  }
+
+  // Check Blocked State
+  ClauseList* blocked = eliminateBlockedClauses(large);
+  if (large->size() == 0) { // done
+    delete large;
+    large = blocked;
+    return;
+  }
+  large->addAll(blocked); // revert
+  delete blocked;
+
+  // TODO: Pure Decomposition
 }
 
 
