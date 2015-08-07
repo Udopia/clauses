@@ -36,13 +36,12 @@ void BlockedClauseDecomposition::decompose() {
   large->addAll(this->clauses);
 
   // Unit Decomposition
-  small = large->removeByCriteria(createUnitFilter());
+  small->addAll(large->removeByCriteria(createUnitFilter()));
 
   // Check Blocked State
   ClauseList* blocked = eliminateBlockedClauses(large);
   if (large->size() == 0) { // done
-    delete large;
-    large = blocked;
+    large->addAll(blocked);
     return;
   }
   large->addAll(blocked); // revert
@@ -57,10 +56,9 @@ void BlockedClauseDecomposition::decompose() {
   }
 
   // Check Blocked State
-  ClauseList* blocked = eliminateBlockedClauses(large);
+  blocked = eliminateBlockedClauses(large);
   if (large->size() == 0) { // done
-    delete large;
-    large = blocked;
+    large->addAll(blocked);
     return;
   }
   large->addAll(blocked); // revert
