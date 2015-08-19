@@ -38,6 +38,9 @@ public:
   virtual void remove(Literals* clause);
 
   void addAll(ClauseList* list);
+  void removeAll(ClauseList* list);
+
+
   Literals* get(int i);
   Literals* getFirst();
   Literals* getLast();

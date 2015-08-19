@@ -54,6 +54,12 @@ void ClauseList::addAll(ClauseList* list) {
   }
 }
 
+void ClauseList::removeAll(ClauseList* list) {
+  for(ClauseList::iterator it = list->begin(); it != list->end(); it++) {
+    this->remove(*it);
+  }
+}
+
 Literals* ClauseList::get(int i) {
   return (*clauses)[i];
 }

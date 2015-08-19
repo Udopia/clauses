@@ -38,16 +38,7 @@ void BlockedClauseDecomposition::decompose() {
   // Unit Decomposition
   small->addAll(large->removeByCriteria(createUnitFilter()));
 
-  // Check Blocked State
-  ClauseList* blocked = eliminateBlockedClauses(large);
-  if (large->size() == 0) { // done
-    large->addAll(blocked);
-    return;
-  }
-  large->addAll(blocked); // revert
-  delete blocked;
-
-  // Remove clauses that are satisfied by unit-prop.
+  // Remove UP satisfied clauses from the large set
   for (ClauseList::iterator unit = small->begin(); unit != small->end(); unit++) {
     Literal lit = (*unit)->getFirst();
     while (large->getClauses(lit)->size() > 0) {
@@ -55,18 +46,31 @@ void BlockedClauseDecomposition::decompose() {
     }
   }
 
-  // Check Blocked State
-  blocked = eliminateBlockedClauses(large);
-  if (large->size() == 0) { // done
-    large->addAll(blocked);
+  if (isBlockedSet(large)) {
     return;
   }
-  large->addAll(blocked); // revert
-  delete blocked;
 
-  // TODO: Pure Decomposition
+  // Pure Decomposition
+  for (int var = 0; var < large->maxVar(); var++) {
+    ClauseList* pos = large->getClauses(mkLit(var, false));
+    ClauseList* neg = large->getClauses(mkLit(var, true));
+    if (pos->size() > neg->size()) {
+      small->addAll(neg);
+      large->removeAll(neg);
+    } else {
+      small->addAll(pos);
+      large->removeAll(pos);
+    }
+  }
 }
 
+bool BlockedClauseDecomposition::isBlockedSet(MappedClauseList* clauses) {
+  ClauseList* blocked = eliminateBlockedClauses(clauses);
+  bool isBlocked = (clauses->size() == 0);
+  clauses->addAll(blocked);
+  delete blocked;
+  return isBlocked;
+}
 
 /**
  * based on SimplifiedArminsBCEliminator

@@ -8,9 +8,9 @@
 #ifndef CLAUSES_TOOLS_MINISATSOLVER_H_
 #define CLAUSES_TOOLS_MINISATSOLVER_H_
 
-#include "minisat/core/Solver.h"
-#include "minisat/core/SolverTypes.h"
-#include "minisat/mtl/Vec.h"
+#include "solver/minisat/core/Solver.h"
+#include "solver/minisat/core/SolverTypes.h"
+#include "solver/minisat/mtl/Vec.h"
 
 namespace Dark {
   class ClauseList;

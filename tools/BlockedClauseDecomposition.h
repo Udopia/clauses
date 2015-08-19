@@ -23,6 +23,7 @@ public:
   virtual ~BlockedClauseDecomposition();
 
   void decompose();
+  bool isBlockedSet(MappedClauseList* clauses);
   ClauseList* eliminateBlockedClauses(MappedClauseList* clauses);
 };
 

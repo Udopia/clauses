@@ -9,7 +9,7 @@
 #define LITERAL_H_
 
 #ifdef MINISAT_TYPES
-  #include "minisat/core/SolverTypes.h"
+  #include "../minisat/solver/minisat/core/SolverTypes.h"
   typedef Minisat::Var Var;
   typedef Minisat::Lit Literal;
 //  using Var = Minisat::Var;
