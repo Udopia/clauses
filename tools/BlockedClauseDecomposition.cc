@@ -54,13 +54,14 @@ void BlockedClauseDecomposition::decompose() {
   for (int var = 0; var < large->maxVar(); var++) {
     ClauseList* pos = large->getClauses(mkLit(var, false));
     ClauseList* neg = large->getClauses(mkLit(var, true));
+    ClauseList* transfer = new ClauseList();
     if (pos->size() > neg->size()) {
-      small->addAll(neg);
-      large->removeAll(neg);
+      transfer->addAll(neg);
     } else {
-      small->addAll(pos);
-      large->removeAll(pos);
+      transfer->addAll(pos);
     }
+    small->addAll(transfer);
+    large->removeAll(transfer);
   }
 }
 
