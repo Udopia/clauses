@@ -28,6 +28,7 @@
 #include "types/Literal.h"
 #include "types/Literals.h"
 #include "types/ClauseList.h"
+#include "types/MappedClauseList.h"
 
 #include "filters/ClauseFilters.h"
 
@@ -119,6 +120,7 @@ int main(int argc, char** argv) {
   EquivalenceDetectionMethod eq_method = PATTERNS;
   int tries = 1;
   bool help = false;
+  bool purity = false;
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-m") == 0 && i < argc - 1) {
@@ -144,6 +146,9 @@ int main(int argc, char** argv) {
     else if (strcmp(argv[i], "-h") == 0) {
       help = true;
     }
+    else if (strcmp(argv[i], "-p") == 0) {
+      purity = true;
+    }
     else {
       filename = argv[i];
     }
@@ -155,6 +160,7 @@ int main(int argc, char** argv) {
     fprintf(stderr, "-m [number] (0 - first clause, 1 - max id, 2 - min occurence)\n");
     fprintf(stderr, "-t [number of tries]\n");
     fprintf(stderr, "-h show this help\n");
+    fprintf(stderr, "-p show number of pure gates\n");
     fprintf(stderr, "-e (0 - stop on non-monot. gates; 1 - check and/or; 2 - check global up; 3 - check local up)\n");
     fprintf(stderr, "filename, nVars, nClauses, nGates, maxDepth1, maxDepth2, maxWidth1, maxWidth2, maxWidth3, medWidth, endTime - startTime\n");
     exit(0);
@@ -168,23 +174,45 @@ int main(int argc, char** argv) {
 
   problem = new Dimacs(in);
   gzclose(in);
-  ClauseList* clauses = problem->getClauses();
+  MappedClauseList* clauses = new MappedClauseList();
+  clauses->addAll(problem->getClauses());
+
+  minDepth = new vector<int>(problem->getDeclNVars(), INT_MAX);
+  minDepth2 = new vector<int>(problem->getDeclNVars(), INT_MAX);
+  int nVars = problem->getDeclNVars();
+
+  delete problem;
+
+  if (clauses->size() == 0) {
+    printf("no clauses\n");
+    return;
+  }
 
   double startTime = cpuTime();
   analyzer = new GateAnalyzer(clauses);
   analyzer->analyzeEncoding(method, eq_method, tries);
   double endTime = cpuTime();
 
-  int nVars = problem->getDeclNVars();
   int usedVars = clauses->countUsedVariables();
   int nClauses = clauses->size();
   vector<int>* nClausesInGate = new vector<int>();
   int nGates = 0;
+
+  int nPureGates = 0;
+  int npgGates = 0;
+
   for (int i = 0; i < nVars+1; i++) {
     Gate* gate = analyzer->getGate(mkLit(i, false));
-    if (gate == NULL) gate = analyzer->getGate(mkLit(i, true));
+    if (gate == NULL) {
+      gate = analyzer->getGate(mkLit(i, true));
+    }
     if (gate != NULL) {
       nGates++;
+      if (clauses->getClauses(mkLit(i, true)) != NULL && clauses->getClauses(mkLit(i, false)) != NULL)
+      if (clauses->getClauses(mkLit(i, true))->size() == 0 || clauses->getClauses(mkLit(i, false))->size() == 0) {
+        nPureGates++;
+      }
+      if (gate->getBackwardClauses()->size() == 0) npgGates++;
       nClausesInGate->push_back(gate->getForwardClauses()->size() + gate->getBackwardClauses()->size());
     }
   }
@@ -195,8 +223,6 @@ int main(int argc, char** argv) {
   int maxWidth2 = (*nClausesInGate)[nClausesInGate->size() - 2];
   int maxWidth1 = (*nClausesInGate)[nClausesInGate->size() - 1];
 
-  minDepth = new vector<int>(problem->getDeclNVars(), INT_MAX);
-  minDepth2 = new vector<int>(problem->getDeclNVars(), INT_MAX);
   setDepths(analyzer->getRoot());
   setDepths2(analyzer->getRoot());
 
@@ -214,8 +240,12 @@ int main(int argc, char** argv) {
   }
 
   //fprintf(stderr, "filename, nVars, nClauses, nGates, maxDepth1, maxDepth2, maxWidth1, maxWidth2, maxWidth3, medWidth, endTime - startTime\n");
-  fprintf(stdout, "%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.2f\n",
-      filename, usedVars, nClauses, nGates, maxDepth1, maxDepth2, maxWidth1, maxWidth2, maxWidth3, medWidth, endTime - startTime);
+  if (purity) {
+    fprintf(stdout, "%s,%i,%i,%i\n", filename, nGates, nPureGates, npgGates);
+  } else {
+    fprintf(stdout, "%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.2f\n",
+        filename, usedVars, nClauses, nGates, maxDepth1, maxDepth2, maxWidth1, maxWidth2, maxWidth3, medWidth, endTime - startTime);
+  }
 
   exit(0);
 }
