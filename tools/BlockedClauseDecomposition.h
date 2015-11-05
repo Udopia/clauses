@@ -11,20 +11,22 @@
 namespace Dark {
 
 class ClauseList;
-class MappedClauseList;
+class ClauseIndex;
 
 class BlockedClauseDecomposition {
 private:
   ClauseList* clauses;
-  MappedClauseList* large;
-  MappedClauseList* small;
+  ClauseList* large;
+  ClauseList* small;
+  ClauseIndex* index;
 public:
   BlockedClauseDecomposition(ClauseList* clauses);
   virtual ~BlockedClauseDecomposition();
 
   void decompose();
-  bool isBlockedSet(MappedClauseList* clauses);
-  ClauseList* eliminateBlockedClauses(MappedClauseList* clauses);
+  void postprocess();
+  bool isBlockedSet(ClauseList* clauses, ClauseIndex* index);
+  ClauseList* eliminateBlockedClauses(ClauseList* clauses, ClauseIndex* index);
 };
 
 } /* namespace Dark */

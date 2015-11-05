@@ -22,7 +22,6 @@
 #include "types/Literal.h"
 #include "types/Literals.h"
 #include "types/ClauseList.h"
-#include "types/MappedClauseList.h"
 
 #include "filters/ClauseFilters.h"
 

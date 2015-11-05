@@ -35,9 +35,6 @@ void ClauseList::freeClauses() {
   }
 }
 
-/**
- * Accessing Methods
- */
 void ClauseList::add(Literals* clause) {
   if (clause->maxVar() > this->maxVar()) max_var = clause->maxVar();
   clauses->push_back(clause);

@@ -28,7 +28,7 @@
 #include "types/Literal.h"
 #include "types/Literals.h"
 #include "types/ClauseList.h"
-#include "types/MappedClauseList.h"
+#include "types/ClauseIndex.h"
 
 #include "filters/ClauseFilters.h"
 
@@ -174,8 +174,8 @@ int main(int argc, char** argv) {
 
   problem = new Dimacs(in);
   gzclose(in);
-  MappedClauseList* clauses = new MappedClauseList();
-  clauses->addAll(problem->getClauses());
+  ClauseList* clauses = problem->getClauses();
+  ClauseIndex* index = new ClauseIndex(clauses);
 
   minDepth = new vector<int>(problem->getDeclNVars(), INT_MAX);
   minDepth2 = new vector<int>(problem->getDeclNVars(), INT_MAX);
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
 
   if (clauses->size() == 0) {
     printf("no clauses\n");
-    return;
+    return 1;
   }
 
   double startTime = cpuTime();
@@ -208,8 +208,8 @@ int main(int argc, char** argv) {
     }
     if (gate != NULL) {
       nGates++;
-      if (clauses->getClauses(mkLit(i, true)) != NULL && clauses->getClauses(mkLit(i, false)) != NULL)
-      if (clauses->getClauses(mkLit(i, true))->size() == 0 || clauses->getClauses(mkLit(i, false))->size() == 0) {
+      if (index->getClauses(mkLit(i, true)) != NULL && index->getClauses(mkLit(i, false)) != NULL)
+      if (index->getClauses(mkLit(i, true))->size() == 0 || index->getClauses(mkLit(i, false))->size() == 0) {
         nPureGates++;
       }
       if (gate->getBackwardClauses()->size() == 0) npgGates++;
