@@ -71,6 +71,8 @@ public:
   iterator begin();
   iterator end();
 
+  void sort(map<Literals*, int>* clauseScore);
+
   int pos(Literals* clause);
   Literals* find(Literals* clause);
   bool contains(Literals* clause);

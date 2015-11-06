@@ -81,6 +81,15 @@ ClauseList::iterator ClauseList::end() {
   return clauses->end();
 }
 
+void ClauseList::sort(map<Literals*, int>* clauseScore) {
+  struct comparator {
+    bool operator() (Literals a, Literals b) {
+      return (*clauseScore)[a] < (*clauseScore)[b];
+    }
+  } comp;
+  std::sort(clauses->begin(), clauses->end(), comp);
+}
+
 /**
  * Comparative Methods
  */

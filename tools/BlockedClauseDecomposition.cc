@@ -73,20 +73,31 @@ void BlockedClauseDecomposition::decompose() {
 }
 
 /**
- * Eager Mover: Sort the small set and try to move blocks of clauses at once
+ * Eager Mover: try to move blocks of clauses at once from the small set to the large set
  */
 void BlockedClauseDecomposition::postprocess() {
-  map<Literals*, int>* clauseScore = new map<Literals*, int>();
-  for (ClauseList::iterator it = small->begin(); it != small->end(); it++) {
-    Literals* clause = *it;
+  // sort clauses in the small set according to the resolution connections in the large set
+  map<Literals*, int>* clauseScores = new map<Literals*, int>();
+  for (ClauseList::iterator clause_it = small->begin(); clause_it != small->end(); clause_it++) {
     int score = 0;
-    for (Literals::iterator it2 = clause->begin(); it2 != clause->end(); it2++) {
-      Literal lit = *it2;
-      score += index->countOccurence(~lit);
+    for (Literals::iterator lit_it = (*clause_it)->begin(); lit_it != (*clause_it)->end(); lit_it++) {
+      score += index->countOccurence(~(*lit_it));
     }
-    (*clauseScore)[clause] = score;
+    (*clauseScores)[*clause_it] = score;
   }
+  small->sort(clauseScores);
 
+  // try moving blocks of clauses from small to large
+  bool success = true;
+  int nSlices = 4;
+  while (success) {
+    success = false;
+    for (int slice = 0; slice < nSlices; slice++) {
+      int blockSize = small->size() / nSlices;
+      int from = slice * blockSize;
+
+    }
+  }
 }
 
 bool BlockedClauseDecomposition::isBlockedSet(ClauseList* clauses, ClauseIndex* index) {
