@@ -11,6 +11,7 @@
 #include "limits.h"
 #include <cstddef>
 #include <memory>
+#include <algorithm>
 
 namespace Dark {
 
@@ -83,11 +84,13 @@ ClauseList::iterator ClauseList::end() {
 
 void ClauseList::sort(map<Literals*, int>* clauseScore) {
   struct comparator {
-    bool operator() (Literals a, Literals b) {
-      return (*clauseScore)[a] < (*clauseScore)[b];
+    comparator(map<Literals*, int>* key) : key(key) {};
+    bool operator() (Literals* a, Literals* b) {
+      return (*key)[a] < (*key)[b];
     }
-  } comp;
-  std::sort(clauses->begin(), clauses->end(), comp);
+    map<Literals*, int>* key;
+  };
+  std::sort(clauses->begin(), clauses->end(), comparator(clauseScore));
 }
 
 /**

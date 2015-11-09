@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <memory>
+#include <map>
 #include "Literals.h"
 #include "Literal.h"
 #include "../filters/ClauseFilter.h"
