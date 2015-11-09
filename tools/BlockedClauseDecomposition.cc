@@ -95,7 +95,8 @@ void BlockedClauseDecomposition::postprocess() {
     for (int slice = 0; slice < nSlices; slice++) {
       int blockSize = small->size() / nSlices;
       int from = slice * blockSize;
-
+      int to = from + blockSize;
+      if (to > small->size()) to = small->size();
     }
   }
 }

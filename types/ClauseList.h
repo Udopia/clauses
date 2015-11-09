@@ -31,6 +31,7 @@ public:
   typedef InternalClauseList::iterator iterator;
 
   ClauseList();
+  ClauseList(std::vector<Literals*>* clauses);
   virtual ~ClauseList();
 
   void freeClauses();
@@ -41,6 +42,7 @@ public:
   void addAll(ClauseList* list);
   void removeAll(ClauseList* list);
 
+  ClauseList* slice(unsigned int from, unsigned int to);
 
   Literals* get(int i);
   Literals* getFirst();

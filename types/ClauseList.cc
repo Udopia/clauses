@@ -20,7 +20,12 @@ namespace Dark {
  */
 ClauseList::ClauseList() {
   clauses = new vector<Literals*>();
-  max_var = -1;
+  max_var = 0;
+}
+
+ClauseList::ClauseList(std::vector<Literals*>* clauses) {
+  this->clauses = clauses;
+  max_var = 0;
 }
 
 /**
@@ -80,6 +85,16 @@ ClauseList::iterator ClauseList::begin() {
 
 ClauseList::iterator ClauseList::end() {
   return clauses->end();
+}
+
+ClauseList* ClauseList::slice(unsigned int from, unsigned int to) {
+  if (to <= from) {
+    return new ClauseList();
+  } else if (to >= this->size()) {
+    return new ClauseList(this->clauses);
+  } else {
+    return new ClauseList(new vector<Literals*>(clauses->begin() + from, clauses->begin() + (to - from)));
+  }
 }
 
 void ClauseList::sort(map<Literals*, int>* clauseScore) {
