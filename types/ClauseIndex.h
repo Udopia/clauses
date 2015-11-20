@@ -30,10 +30,12 @@ public:
   virtual ~ClauseIndex();
 
   void add(Literals* clause);
+  void addAll(ClauseList* clause);
   void remove(Literals* clause);
   void removeAll(ClauseList* clause);
 
   void augment(Literals* clause, Literal lit);
+  void augment(ClauseList* clauses, Literal lit);
 
   ClauseList* getClauses(Literal literal);
 

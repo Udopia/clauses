@@ -47,6 +47,13 @@ void ClauseIndex::add(Literals* clause) {
   }
 }
 
+void ClauseIndex::addAll(ClauseList* list) {
+  for(ClauseList::iterator it = list->begin(); it != list->end(); it++) {
+    this->add(*it);
+  }
+}
+
+
 void ClauseIndex::remove(Literals* clause) {
   for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
     Literal lit = *it;
@@ -64,6 +71,12 @@ void ClauseIndex::augment(Literals* clause, Literal lit) {
   createVars(var(lit));
   clause->add(lit);
   (*clauseMap)[lit]->add(clause);
+}
+
+void ClauseIndex::augment(ClauseList* clauses, Literal lit) {
+  for (Literals* clause : *clauses) {
+    augment(clause, lit);
+  }
 }
 
 ClauseList* ClauseIndex::getClauses(Literal literal) {

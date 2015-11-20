@@ -25,6 +25,7 @@ public:
 
   void decompose();
   void postprocess();
+  void shiftSmallByUnit();
   bool isBlockedSet(ClauseList* clauses, ClauseIndex* index);
   ClauseList* eliminateBlockedClauses(ClauseList* clauses, ClauseIndex* index);
 };

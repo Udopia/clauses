@@ -97,6 +97,7 @@ ClauseList* ClauseList::slice(unsigned int from, unsigned int to) {
   }
 }
 
+// sort clauses by given score
 void ClauseList::sort(map<Literals*, int>* clauseScore) {
   struct comparator {
     comparator(map<Literals*, int>* key) : key(key) {};
@@ -165,10 +166,10 @@ void ClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
   clauses = nextClauses;
 }
 
-bool ClauseList::isBlockedBy(Literal lit, Literals* clause) {
+bool ClauseList::isBlockedBy(Literal blocking, Literals* clause) {
   for (iterator it = begin(); it != end(); it++) {
     Literals* cl = *it;
-    if (!(cl->isBlockedBy(lit, clause))) {
+    if (!(cl->isBlockedBy(blocking, clause))) {
       return false;
     }
   }
