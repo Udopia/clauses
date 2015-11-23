@@ -21,15 +21,15 @@
 #include "../types/ClauseList.h"
 #include "../types/ClauseIndex.h"
 
-#define VERBOSITY 1
+#define VERBOSITY 0
 #include "../misc/debug.h"
 
 namespace Dark {
 
 BlockedClauseDecomposition::BlockedClauseDecomposition(ClauseList* clauses) {
   small = new ClauseList();
-  large = new ClauseList(clauses);
-  index = new ClauseIndex(clauses);
+  large = clauses;
+  index = new ClauseIndex(large);
 }
 
 BlockedClauseDecomposition::~BlockedClauseDecomposition() {
@@ -101,19 +101,18 @@ void BlockedClauseDecomposition::postprocess() {
     for (int slice = 0; slice < nSlices; slice++) {
       int blockSize = small->size() / nSlices;
       unsigned int from = slice * blockSize;
-      unsigned int to = from + blockSize;
-      if (to > small->size()) to = small->size();
+      unsigned int to = std::min(from + blockSize, small->size());
       ClauseList* block = small->slice(from, to);
-      newLarge->addAll(block);
       newIndex->addAll(block);
       if (!isBlockedSet(newIndex)) {
-        newLarge->removeAll(block);
         newIndex->removeAll(block);
       } else {
+        newLarge->addAll(block);
         small->removeAll(block);
         success = true;
         slice--;
       }
+      delete block;
     }
   }
   delete large;
@@ -159,28 +158,14 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseIndex* ind
     notInStack[toInt(lit)] = true;
 
     ClauseList* occurrence = new ClauseList(index->getClauses(lit));
-    ClauseList* mirror = new ClauseList(index->getClauses(~lit));
-
-    D1(printf("check lit %s%i\n", sign(lit) ? "-" : "", var(lit)+1);)
-    D2(printf("check if clauses: "); occurrence->print();)
-    D2(printf(" are blocked by clauses "); mirror->print();)
-    D2(printf("\n");)
+    ClauseList* mirror = index->getClauses(~lit);
 
     for (ClauseList::iterator it = occurrence->begin(); it != occurrence->end(); it++) {
       Literals* clause = *it;
 
-      if (clause == NULL) {
-        printf("clause is null");
-        continue;
-      }
-
       if (mirror->size() == 0 || mirror->isBlockedBy(lit, clause)) {
         // move blocking literal to the beginning of the list
-        D1(printf("clause is blocked: "); clause->println();)
         int pos = clause->pos(lit);
-        if (pos == -1) {
-          D1(printf("clause not found: "); clause->println();)
-        }
         (*clause)[pos] = (*clause)[0];
         (*clause)[0] = lit;
         // move blocked clause to separate list
@@ -196,9 +181,20 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseIndex* ind
         }
       }
     }
+    delete occurrence;
   }
 
+  delete litsToCheck;
+
   return blockedClauses;
+}
+
+ClauseList* BlockedClauseDecomposition::decomposeClauses() {
+  decompose();
+  postprocess();
+  shiftSmallByUnit();
+  large->addAll(small);
+  return large;
 }
 
 } /* namespace Dark */

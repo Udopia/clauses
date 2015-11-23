@@ -18,6 +18,10 @@ private:
   ClauseList* large;
   ClauseList* small;
   ClauseIndex* index;
+
+  bool isBlockedSet(ClauseIndex* index);
+  ClauseList* eliminateBlockedClauses(ClauseIndex* index);
+
 public:
   BlockedClauseDecomposition(ClauseList* clauses);
   virtual ~BlockedClauseDecomposition();
@@ -26,9 +30,8 @@ public:
   void postprocess();
   void shiftSmallByUnit();
 
-  bool isBlockedSet(ClauseIndex* index);
+  ClauseList* decomposeClauses();
 
-  ClauseList* eliminateBlockedClauses(ClauseIndex* index);
 };
 
 } /* namespace Dark */

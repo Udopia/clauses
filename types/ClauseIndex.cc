@@ -46,15 +46,18 @@ void ClauseIndex::createVars(Var v) {
 void ClauseIndex::add(Literals* clause) {
   createVars(clause->maxVar());
   nClauses++;
-  for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
-    Literal lit = *it;
-    (*clauseMap)[lit]->add(clause);
+  for (std::vector<Literal>::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
+    (*clauseMap)[*lit]->add(clause);
   }
 }
 
 void ClauseIndex::addAll(ClauseList* list) {
-  for(ClauseList::iterator it = list->begin(); it != list->end(); it++) {
-    this->add(*it);
+  createVars(list->maxVar());
+  nClauses += list->size();
+  for(ClauseList::iterator clit = list->begin(); clit != list->end(); clit++) {
+    for (std::vector<Literal>::iterator lit = (*clit)->begin(); lit != (*clit)->end(); ++lit) {
+      (*clauseMap)[*lit]->add(*clit);
+    }
   }
 }
 

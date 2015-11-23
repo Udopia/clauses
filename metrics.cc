@@ -182,9 +182,7 @@ int main(int argc, char** argv) {
   ClauseList* clauses = problem->getClauses();
   if (bcd) {
     BlockedClauseDecomposition bcDec(clauses);
-    bcDec.decompose();
-    bcDec.postprocess();
-    bcDec.shiftSmallByUnit();
+    bcDec.decomposeClauses();
   }
 
   minDepth = new vector<int>(problem->getDeclNVars(), INT_MAX);

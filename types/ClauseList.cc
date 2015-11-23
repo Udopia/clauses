@@ -54,7 +54,7 @@ void ClauseList::freeClauses() {
 }
 
 void ClauseList::add(Literals* clause) {
-  if (clause->maxVar() > this->maxVar()) max_var = clause->maxVar();
+  max_var = std::max(max_var, clause->maxVar());
   clauses->push_back(clause);
 }
 
@@ -64,9 +64,8 @@ void ClauseList::remove(Literals* clause) {
 }
 
 void ClauseList::addAll(ClauseList* list) {
-  for(ClauseList::iterator it = list->begin(); it != list->end(); it++) {
-    this->add(*it);
-  }
+  max_var = std::max(max_var, list->max_var);
+  clauses->insert(clauses->end(), list->clauses->begin(), list->clauses->end());
 }
 
 void ClauseList::removeAll(ClauseList* list) {
