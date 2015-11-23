@@ -148,7 +148,9 @@ bool GateAnalyzer::hasParents(Literal child) {
 
 void GateAnalyzer::setParent(Literal parent, Literal child) {
   D2(fprintf(stderr, "Adding Parent-child-relationship: %s%i -> %s%i\n", sign(parent)?"-":"", var(parent)+1, sign(child)?"-":"", var(child)+1);)
-  (*parents)[child]->push_back(parent);
+  if (std::find((*parents)[child]->begin(), (*parents)[child]->end(), parent) == (*parents)[child]->end()) {
+    (*parents)[child]->push_back(parent);
+  }
 }
 
 void GateAnalyzer::unsetParent(Literal parent) {

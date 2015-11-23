@@ -198,8 +198,8 @@ int main(int argc, char** argv) {
   vector<int>* nClausesInGate = new vector<int>();
   int nGates = 0;
 
-  int nPureGates = 0;
-  int npgGates = 0;
+  int nSimpleGates = 0;
+  int nUsedGates = 0;
 
   for (int i = 0; i < nVars+1; i++) {
     Gate* gate = analyzer->getGate(mkLit(i, false));
@@ -207,12 +207,14 @@ int main(int argc, char** argv) {
       gate = analyzer->getGate(mkLit(i, true));
     }
     if (gate != NULL) {
+      Literal output = gate->getOutput();
       nGates++;
-      if (clauses->getClauses(mkLit(i, true)) != NULL && clauses->getClauses(mkLit(i, false)) != NULL)
-      if (clauses->getClauses(mkLit(i, true))->size() == 0 || clauses->getClauses(mkLit(i, false))->size() == 0) {
-        nPureGates++;
+      if (gate->getBackwardClauses()->size() == 0) {
+        nSimpleGates++;
       }
-      if (gate->getBackwardClauses()->size() == 0) npgGates++;
+      if (analyzer->getParents(output) != NULL && analyzer->getParents(output)->size() > 1) {
+        nUsedGates++;
+      }
       nClausesInGate->push_back(gate->getForwardClauses()->size() + gate->getBackwardClauses()->size());
     }
   }
@@ -239,9 +241,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  //fprintf(stderr, "filename, nVars, nClauses, nGates, maxDepth1, maxDepth2, maxWidth1, maxWidth2, maxWidth3, medWidth, endTime - startTime\n");
   if (purity) {
-    fprintf(stdout, "%s,%i,%i,%i\n", filename, nGates, nPureGates, npgGates);
+    fprintf(stdout, "%s,%i,%i,%i\n", filename, nGates, nSimpleGates, nUsedGates);
   } else {
     fprintf(stdout, "%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.2f\n",
         filename, usedVars, nClauses, nGates, maxDepth1, maxDepth2, maxWidth1, maxWidth2, maxWidth3, medWidth, endTime - startTime);
