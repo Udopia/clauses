@@ -23,8 +23,20 @@ ClauseList::ClauseList() {
   max_var = 0;
 }
 
-ClauseList::ClauseList(std::vector<Literals*>* clauses) {
-  this->clauses = clauses;
+ClauseList::ClauseList(ClauseList* list) {
+  clauses = new vector<Literals*>();
+  max_var = 0;
+  if (list != NULL) {
+    this->addAll(list);
+  }
+}
+
+ClauseList::ClauseList(std::vector<Literals*>* vec) {
+  if (vec != NULL) {
+    clauses = vec;
+  } else {
+    clauses = new vector<Literals*>();
+  }
   max_var = 0;
 }
 

@@ -15,7 +15,6 @@ class ClauseIndex;
 
 class BlockedClauseDecomposition {
 private:
-  ClauseList* clauses;
   ClauseList* large;
   ClauseList* small;
   ClauseIndex* index;
@@ -26,8 +25,10 @@ public:
   void decompose();
   void postprocess();
   void shiftSmallByUnit();
-  bool isBlockedSet(ClauseList* clauses, ClauseIndex* index);
-  ClauseList* eliminateBlockedClauses(ClauseList* clauses, ClauseIndex* index);
+
+  bool isBlockedSet(ClauseIndex* index);
+
+  ClauseList* eliminateBlockedClauses(ClauseIndex* index);
 };
 
 } /* namespace Dark */

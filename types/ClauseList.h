@@ -31,6 +31,7 @@ public:
   typedef InternalClauseList::iterator iterator;
 
   ClauseList();
+  ClauseList(ClauseList* clauses);
   ClauseList(std::vector<Literals*>* clauses);
   virtual ~ClauseList();
 

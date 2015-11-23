@@ -186,7 +186,6 @@ int main(int argc, char** argv) {
     bcDec.postprocess();
     bcDec.shiftSmallByUnit();
   }
-  ClauseIndex* index = new ClauseIndex(clauses);
 
   minDepth = new vector<int>(problem->getDeclNVars(), INT_MAX);
   minDepth2 = new vector<int>(problem->getDeclNVars(), INT_MAX);

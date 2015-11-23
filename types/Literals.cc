@@ -143,9 +143,6 @@ Literal& Literals::operator[] (const int i) {
     return (*literals)[i];
 }
 
-/**
- * Comparators
- */
 int Literals::pos(Literal literal) {
   for (unsigned int i = 0; i < literals->size(); i++) {
     if ((*literals)[i] == literal) {

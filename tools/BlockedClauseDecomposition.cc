@@ -21,16 +21,15 @@
 #include "../types/ClauseList.h"
 #include "../types/ClauseIndex.h"
 
-#define VERBOSITY 0
+#define VERBOSITY 1
 #include "../misc/debug.h"
 
 namespace Dark {
 
 BlockedClauseDecomposition::BlockedClauseDecomposition(ClauseList* clauses) {
-  this->clauses = clauses;
-  this->index = new ClauseIndex(clauses);
-  large = NULL;
-  small = NULL;
+  small = new ClauseList();
+  large = new ClauseList(clauses);
+  index = new ClauseIndex(clauses);
 }
 
 BlockedClauseDecomposition::~BlockedClauseDecomposition() {
@@ -40,31 +39,26 @@ BlockedClauseDecomposition::~BlockedClauseDecomposition() {
  * Perform unit decomposition followed by pure decomposition
  */
 void BlockedClauseDecomposition::decompose() {
-  small = new ClauseList();
-  large = new ClauseList();
-  large->addAll(this->clauses);
-
   // Unit Decomposition
-  D1(printf("unit decompose");)
+  D1(printf("unit decompose\n");)
   ClauseList* units = large->removeByCriteria(createUnitFilter());
   index->removeAll(units);
   small->addAll(units);
 
-  D1(printf("up simplify");)
   // Remove UP satisfied clauses from the large set
+  D1(printf("up simplify\n");)
   for (ClauseList::iterator unit = small->begin(); unit != small->end(); unit++) {
-    Literal lit = (*unit)->getFirst();
-    ClauseList* remove = index->getClauses(lit);
+    ClauseList* remove = index->getClauses((*unit)->getFirst());
     large->removeAll(remove);
     index->removeAll(remove);
   }
 
-  D1(printf("check blocked");)
-  if (isBlockedSet(large, index)) {
+  D1(printf("check blocked\n");)
+  if (isBlockedSet(index)) {
     return;
   }
 
-  D1(printf("pure decompose");)
+  D1(printf("pure decompose\n");)
   // Pure Decomposition
   for (int var = 0; var < large->maxVar(); var++) {
     ClauseList* pos = index->getClauses(mkLit(var, false));
@@ -112,7 +106,7 @@ void BlockedClauseDecomposition::postprocess() {
       ClauseList* block = small->slice(from, to);
       newLarge->addAll(block);
       newIndex->addAll(block);
-      if (!isBlockedSet(newLarge, newIndex)) {
+      if (!isBlockedSet(newIndex)) {
         newLarge->removeAll(block);
         newIndex->removeAll(block);
       } else {
@@ -127,7 +121,7 @@ void BlockedClauseDecomposition::postprocess() {
 }
 
 void BlockedClauseDecomposition::shiftSmallByUnit() {
-  Var v = clauses->newVar();
+  Var v = small->newVar();
   ClauseIndex* index = new ClauseIndex(small);
   index->augment(small, mkLit(v, true));
   large->addAll(small);
@@ -135,13 +129,12 @@ void BlockedClauseDecomposition::shiftSmallByUnit() {
   small = new ClauseList();
   Literals* unit = new Literals(mkLit(v, false));
   small->add(unit);
-  clauses->add(unit);
 }
 
-bool BlockedClauseDecomposition::isBlockedSet(ClauseList* clauses, ClauseIndex* index) {
-  ClauseList* blocked = eliminateBlockedClauses(clauses, index);
-  bool isBlocked = (clauses->size() == 0);
-  clauses->addAll(blocked);
+bool BlockedClauseDecomposition::isBlockedSet(ClauseIndex* index) {
+  ClauseList* blocked = eliminateBlockedClauses(index);
+  bool isBlocked = (index->countClauses() == 0);
+  index->addAll(blocked);
   delete blocked;
   return isBlocked;
 }
@@ -149,11 +142,11 @@ bool BlockedClauseDecomposition::isBlockedSet(ClauseList* clauses, ClauseIndex* 
 /**
  * based on SimplifiedArminsBCEliminator
  */
-ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseList* clauses, ClauseIndex* index) {
+ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseIndex* index) {
   std::stack<Literal>* litsToCheck = new std::stack<Literal>();
-  vector<bool> notInStack(2 + 2 * clauses->maxVar(), false);
+  vector<bool> notInStack(2 + 2 * index->countVars(), false);
 
-  for (int i = 1; i <= clauses->maxVar(); i++) {
+  for (int i = 1; i <= index->countVars(); i++) {
     litsToCheck->push(mkLit(i, false));
     litsToCheck->push(mkLit(i, true));
   }
@@ -165,15 +158,15 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseList* clau
     litsToCheck->pop();
     notInStack[toInt(lit)] = true;
 
-    ClauseList* occurance = index->getClauses(lit);
-    ClauseList* mirror = index->getClauses(~lit);
+    ClauseList* occurrence = new ClauseList(index->getClauses(lit));
+    ClauseList* mirror = new ClauseList(index->getClauses(~lit));
 
     D1(printf("check lit %s%i\n", sign(lit) ? "-" : "", var(lit)+1);)
-    D2(printf("check if clauses: "); occurance->print();)
+    D2(printf("check if clauses: "); occurrence->print();)
     D2(printf(" are blocked by clauses "); mirror->print();)
     D2(printf("\n");)
 
-    for (ClauseList::iterator it = occurance->begin(); it != occurance->end(); it++) {
+    for (ClauseList::iterator it = occurrence->begin(); it != occurrence->end(); it++) {
       Literals* clause = *it;
 
       if (clause == NULL) {
@@ -184,11 +177,14 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseList* clau
       if (mirror->size() == 0 || mirror->isBlockedBy(lit, clause)) {
         // move blocking literal to the beginning of the list
         D1(printf("clause is blocked: "); clause->println();)
-        (*clause)[clause->pos(lit)] = (*clause)[0];
+        int pos = clause->pos(lit);
+        if (pos == -1) {
+          D1(printf("clause not found: "); clause->println();)
+        }
+        (*clause)[pos] = (*clause)[0];
         (*clause)[0] = lit;
         // move blocked clause to separate list
         blockedClauses->add(clause);
-        clauses->remove(clause);
         index->remove(clause);
         // push all literals to the stack
         for (Literals::iterator iter = clause->begin(); iter != clause->end(); iter++) {

@@ -25,6 +25,7 @@ class ClauseIndex {
 private:
   std::map<Literal, Dark::ClauseList*>* clauseMap;
   int nVars;
+  int nClauses;
 
   void createVars(Var v);
 
@@ -42,8 +43,10 @@ public:
   void augment(ClauseList* clauses, Literal lit);
 
   ClauseList* getClauses(Literal literal);
-
   int countOccurence(Literal literal);
+
+  int countVars();
+  int countClauses();
 };
 
 }

@@ -14,13 +14,17 @@ namespace Dark {
 ClauseIndex::ClauseIndex() {
   clauseMap = new std::map<Literal, Dark::ClauseList*>();
   nVars = 0;
+  nClauses = 0;
 }
 
 ClauseIndex::ClauseIndex(Dark::ClauseList* clauses) {
   clauseMap = new std::map<Literal, Dark::ClauseList*>();
   nVars = 0;
-  for (ClauseList::iterator clit = clauses->begin(); clit != clauses->end(); ++clit) {
-    this->add(*clit);
+  nClauses = 0;
+  if (clauses != NULL) {
+    for (ClauseList::iterator clit = clauses->begin(); clit != clauses->end(); ++clit) {
+      this->add(*clit);
+    }
   }
 }
 
@@ -41,6 +45,7 @@ void ClauseIndex::createVars(Var v) {
 
 void ClauseIndex::add(Literals* clause) {
   createVars(clause->maxVar());
+  nClauses++;
   for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
     Literal lit = *it;
     (*clauseMap)[lit]->add(clause);
@@ -55,6 +60,7 @@ void ClauseIndex::addAll(ClauseList* list) {
 
 
 void ClauseIndex::remove(Literals* clause) {
+  nClauses--;
   for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
     Literal lit = *it;
     (*clauseMap)[lit]->remove(clause);
@@ -85,6 +91,14 @@ ClauseList* ClauseIndex::getClauses(Literal literal) {
 
 int ClauseIndex::countOccurence(Literal literal) {
   return (*clauseMap)[literal]->size();
+}
+
+int ClauseIndex::countVars() {
+  return nVars;
+}
+
+int ClauseIndex::countClauses() {
+  return nClauses;
 }
 
 }

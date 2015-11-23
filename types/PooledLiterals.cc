@@ -9,13 +9,13 @@
 
 namespace Dark {
 
-PooledLiterals::PooledLiterals() {
-  // TODO Auto-generated constructor stub
-
-}
-
-PooledLiterals::~PooledLiterals() {
-  // TODO Auto-generated destructor stub
-}
+//PooledLiterals::PooledLiterals() {
+//  // TODO Auto-generated constructor stub
+//
+//}
+//
+//PooledLiterals::~PooledLiterals() {
+//  // TODO Auto-generated destructor stub
+//}
 
 } /* namespace Dark */

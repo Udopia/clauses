@@ -66,8 +66,11 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList) {
 }
 
 GateAnalyzer::~GateAnalyzer() {
-  freeAllContent();
-  delete clauses;
+  for (map<Literal, vector<Literal>*>::iterator it = parents->begin();
+      it != parents->end(); ++it) {
+    delete it->second;
+  }
+  delete index;
   delete parents;
 }
 
@@ -76,14 +79,6 @@ MinisatSolver* GateAnalyzer::getMinisatSolver() {
     minisat = new MinisatSolver(clauses);
   }
   return minisat;
-}
-
-void GateAnalyzer::freeAllContent() {
-  for (map<Literal, vector<Literal>*>::iterator it = parents->begin();
-      it != parents->end(); ++it) {
-    delete it->second;
-  }
-  delete index;
 }
 
 ClauseList* GateAnalyzer::getGateClauses(Literal literal) {
