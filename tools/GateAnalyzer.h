@@ -27,7 +27,7 @@ using namespace std;
 namespace Dark {
 
 class Literals;
-class MappedClauseList;
+class ClauseIndex;
 class Gate;
 
 enum RootSelectionMethod {
@@ -76,7 +76,8 @@ public:
 
 
 private:
-  MappedClauseList* clauses;
+  ClauseList* clauses;
+  ClauseIndex* index;
 
   MinisatSolver* minisat;
 

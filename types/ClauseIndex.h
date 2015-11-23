@@ -1,59 +1,50 @@
 /*
  * ClauseIndex.h
  *
+<<<<<<< HEAD
  *  Created on: Oct 31, 2015
+=======
+ *  Created on: Nov 5, 2015
+>>>>>>> c209260b962b7b645e971e5ce384b5bc2f89df3a
  *      Author: markus
  */
 
 #ifndef TYPES_CLAUSEINDEX_H_
 #define TYPES_CLAUSEINDEX_H_
 
+#include <map>
 
-#include <vector>
-#include <memory>
-#include "Literals.h"
 #include "Literal.h"
-#include "../filters/ClauseFilter.h"
-
-using namespace std;
 
 namespace Dark {
+
+class Literals;
+class ClauseList;
 
 class ClauseIndex {
 private:
   std::map<Literal, Dark::ClauseList*>* clauseMap;
+  int nVars;
+
+  void createVars(Var v);
 
 public:
   ClauseIndex();
+  ClauseIndex(ClauseList* clauses);
   virtual ~ClauseIndex();
 
   void add(Literals* clause);
+  void addAll(ClauseList* clause);
   void remove(Literals* clause);
+  void removeAll(ClauseList* clause);
 
   void augment(Literals* clause, Literal lit);
-  void augmentAll(Literal lit);
-
-  int newVar() {
-    Literal lit = mkLit(++max_var, false);
-    (*clauseMap)[lit] = new Dark::ClauseList();
-    (*clauseMap)[~lit] = new Dark::ClauseList();
-    return max_var;
-  }
-
-  void addVarsUntil(Var v) {
-    while (max_var < v) {
-      newVar();
-    }
-  }
+  void augment(ClauseList* clauses, Literal lit);
 
   ClauseList* getClauses(Literal literal);
-  ClauseList* getFiltered(Literal literal, bool stripVisited, bool stripBackpointers);
-
-  void dumpByCriteria(unique_ptr<ClauseFilter> filter);
 
   int countOccurence(Literal literal);
 };
 
 }
-
 #endif /* TYPES_CLAUSEINDEX_H_ */

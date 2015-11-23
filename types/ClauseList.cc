@@ -11,6 +11,7 @@
 #include "limits.h"
 #include <cstddef>
 #include <memory>
+#include <algorithm>
 
 namespace Dark {
 
@@ -19,7 +20,12 @@ namespace Dark {
  */
 ClauseList::ClauseList() {
   clauses = new vector<Literals*>();
-  max_var = -1;
+  max_var = 0;
+}
+
+ClauseList::ClauseList(std::vector<Literals*>* clauses) {
+  this->clauses = clauses;
+  max_var = 0;
 }
 
 /**
@@ -35,9 +41,6 @@ void ClauseList::freeClauses() {
   }
 }
 
-/**
- * Accessing Methods
- */
 void ClauseList::add(Literals* clause) {
   if (clause->maxVar() > this->maxVar()) max_var = clause->maxVar();
   clauses->push_back(clause);
@@ -82,6 +85,28 @@ ClauseList::iterator ClauseList::begin() {
 
 ClauseList::iterator ClauseList::end() {
   return clauses->end();
+}
+
+ClauseList* ClauseList::slice(unsigned int from, unsigned int to) {
+  if (to <= from) {
+    return new ClauseList();
+  } else if (to >= this->size()) {
+    return new ClauseList(this->clauses);
+  } else {
+    return new ClauseList(new vector<Literals*>(clauses->begin() + from, clauses->begin() + (to - from)));
+  }
+}
+
+// sort clauses by given score
+void ClauseList::sort(map<Literals*, int>* clauseScore) {
+  struct comparator {
+    comparator(map<Literals*, int>* key) : key(key) {};
+    bool operator() (Literals* a, Literals* b) {
+      return (*key)[a] < (*key)[b];
+    }
+    map<Literals*, int>* key;
+  };
+  std::sort(clauses->begin(), clauses->end(), comparator(clauseScore));
 }
 
 /**
@@ -141,10 +166,10 @@ void ClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
   clauses = nextClauses;
 }
 
-bool ClauseList::isBlockedBy(Literal lit, Literals* clause) {
+bool ClauseList::isBlockedBy(Literal blocking, Literals* clause) {
   for (iterator it = begin(); it != end(); it++) {
     Literals* cl = *it;
-    if (!(cl->isBlockedBy(lit, clause))) {
+    if (!(cl->isBlockedBy(blocking, clause))) {
       return false;
     }
   }

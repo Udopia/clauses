@@ -12,7 +12,8 @@
 
 #include "../types/Literal.h"
 #include "../types/Literals.h"
-#include "../types/MappedClauseList.h"
+#include "../types/ClauseList.h"
+#include "../types/ClauseIndex.h"
 
 #include "../filters/ClauseFilters.h"
 
@@ -31,8 +32,8 @@
 namespace Dark {
 
 GateAnalyzer::GateAnalyzer(ClauseList* clauseList) {
-  clauses = new MappedClauseList();
-  clauses->addAll(clauseList);
+  clauses = clauseList;
+  index = new ClauseIndex(clauses);
 
   parents = new map<Literal, vector<Literal>*>();
   inputs = new map<Literal, bool>();
@@ -58,8 +59,9 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList) {
   // create artificial root unit-clause and subordinate the existing unit-clauses
   ClauseList* units = clauses->getByCriteria(createUnitFilter());
   clauses->add(rootClause); // note: it is important to add the new unit _after_ filtering the existing units
+  index->add(rootClause);
   for (unsigned int i = 0; i < units->size(); i++) {
-    clauses->augment(units->get(i), ~root);
+    index->augment(units->get(i), ~root);
   }
 }
 
@@ -77,11 +79,11 @@ MinisatSolver* GateAnalyzer::getMinisatSolver() {
 }
 
 void GateAnalyzer::freeAllContent() {
-  clauses->freeClauses();
   for (map<Literal, vector<Literal>*>::iterator it = parents->begin();
       it != parents->end(); ++it) {
     delete it->second;
   }
+  delete index;
 }
 
 ClauseList* GateAnalyzer::getGateClauses(Literal literal) {
@@ -178,7 +180,7 @@ bool GateAnalyzer::isMonotonousInput(Var var) {
 }
 
 /***
- * Algorithm Refinement, after submition to SAT:
+ * Algorithm Refinement, after submission to SAT:
  * 1. Conceptually add sth. like pure-decomposition for a better clause-selection heuristic
  *    by always picking the bunch of clauses for the selected literal (based on min-occurence heuristic).
  *    Maybe this make several tries more effective.
@@ -187,27 +189,24 @@ bool GateAnalyzer::isMonotonousInput(Var var) {
 ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
   Literal min;
   int minOcc = INT_MAX;
-  // TODO: should work without mappedclauselist
-  MappedClauseList* mlist = new MappedClauseList();
-  mlist->addAll(list);
+  ClauseIndex* index = new ClauseIndex(list);
   for (int i = 0; i < list->maxVar(); i++) {
     Literal lit = mkLit(i, false);
-    int occ = mlist->countOccurence(lit);
+    int occ = index->countOccurence(lit);
     if (occ != 0 && occ < minOcc) {
       minOcc = occ;
       min = lit;
     }
-    occ = mlist->countOccurence(~lit);
+    occ = index->countOccurence(~lit);
     if (occ != 0 && occ < minOcc) {
       minOcc = occ;
       min = ~lit;
     }
   }
-  return mlist->getClauses(min);
+  return index->getClauses(min);
 }
 
-Literals* GateAnalyzer::getNextClause(ClauseList* list,
-    RootSelectionMethod method) {
+Literals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
   switch (method) {
   case FIRST_CLAUSE: {
     return list->getFirst();
@@ -255,7 +254,7 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
     for (Literals::iterator it = next->begin(); it != next->end(); it++) {
       setParent(root, *it);
     }
-    clauses->augment(next, ~root);
+    index->augment(next, ~root);
 
     for (Literals::iterator it = next->begin(); it != next->end(); it++) {
       if (*it != ~root)
@@ -264,11 +263,10 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
     remainder->dumpByCriteria(createMarkFilter());
   }
 
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end();
-      it++) {
+  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
     Literals* next = *it;
     next->setMarked();
-    clauses->augment(next, ~root);
+    index->augment(next, ~root);
     getOrCreateGate(root)->addForwardClause(next);
     for (Literals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
       setParent(root, *it2);
@@ -299,8 +297,8 @@ void GateAnalyzer::analyzeEncoding(Literal root, EquivalenceDetectionMethod equi
 
     Gate* gate = NULL;
 
-    ClauseList* fwd = clauses->getClauses(~output)->getByCriteria(createNoMarkFilter());
-    ClauseList* bwd = clauses->getClauses(output)->getByCriteria(createNoMarkFilter());
+    ClauseList* fwd = index->getClauses(~output)->getByCriteria(createNoMarkFilter());
+    ClauseList* bwd = index->getClauses(output)->getByCriteria(createNoMarkFilter());
 
     D1(
         fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);

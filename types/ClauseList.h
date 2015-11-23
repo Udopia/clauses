@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <memory>
+#include <map>
 #include "Literals.h"
 #include "Literal.h"
 #include "../filters/ClauseFilter.h"
@@ -30,6 +31,7 @@ public:
   typedef InternalClauseList::iterator iterator;
 
   ClauseList();
+  ClauseList(std::vector<Literals*>* clauses);
   virtual ~ClauseList();
 
   void freeClauses();
@@ -40,6 +42,7 @@ public:
   void addAll(ClauseList* list);
   void removeAll(ClauseList* list);
 
+  ClauseList* slice(unsigned int from, unsigned int to);
 
   Literals* get(int i);
   Literals* getFirst();
@@ -70,6 +73,8 @@ public:
 
   iterator begin();
   iterator end();
+
+  void sort(map<Literals*, int>* clauseScore);
 
   int pos(Literals* clause);
   Literals* find(Literals* clause);

@@ -24,12 +24,12 @@
 
 #include "tools/GateAnalyzer.h"
 #include "tools/Gate.h"
+#include "tools/BlockedClauseDecomposition.h"
 
 #include "types/Literal.h"
 #include "types/Literals.h"
 #include "types/ClauseList.h"
-#include "types/MappedClauseList.h"
-
+#include "types/ClauseIndex.h"
 #include "filters/ClauseFilters.h"
 
 using namespace Dark;
@@ -121,6 +121,7 @@ int main(int argc, char** argv) {
   int tries = 1;
   bool help = false;
   bool purity = false;
+  bool bcd = false;
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-m") == 0 && i < argc - 1) {
@@ -146,6 +147,9 @@ int main(int argc, char** argv) {
     else if (strcmp(argv[i], "-h") == 0) {
       help = true;
     }
+    else if (strcmp(argv[i], "-b") == 0) {
+      bcd = true;
+    }
     else if (strcmp(argv[i], "-p") == 0) {
       purity = true;
     }
@@ -161,6 +165,7 @@ int main(int argc, char** argv) {
     fprintf(stderr, "-t [number of tries]\n");
     fprintf(stderr, "-h show this help\n");
     fprintf(stderr, "-p show number of pure gates\n");
+    fprintf(stderr, "-b bcd before analysis\n");
     fprintf(stderr, "-e (0 - stop on non-monot. gates; 1 - check and/or; 2 - check global up; 3 - check local up)\n");
     fprintf(stderr, "filename, nVars, nClauses, nGates, maxDepth1, maxDepth2, maxWidth1, maxWidth2, maxWidth3, medWidth, endTime - startTime\n");
     exit(0);
@@ -174,8 +179,14 @@ int main(int argc, char** argv) {
 
   problem = new Dimacs(in);
   gzclose(in);
-  MappedClauseList* clauses = new MappedClauseList();
-  clauses->addAll(problem->getClauses());
+  ClauseList* clauses = problem->getClauses();
+  if (bcd) {
+    BlockedClauseDecomposition bcDec(clauses);
+    bcDec.decompose();
+    bcDec.postprocess();
+    bcDec.shiftSmallByUnit();
+  }
+  ClauseIndex* index = new ClauseIndex(clauses);
 
   minDepth = new vector<int>(problem->getDeclNVars(), INT_MAX);
   minDepth2 = new vector<int>(problem->getDeclNVars(), INT_MAX);
@@ -185,7 +196,7 @@ int main(int argc, char** argv) {
 
   if (clauses->size() == 0) {
     printf("no clauses\n");
-    return;
+    return 1;
   }
 
   double startTime = cpuTime();
