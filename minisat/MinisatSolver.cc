@@ -7,7 +7,7 @@
 
 #include "MinisatSolver.h"
 #include "../types/ClauseList.h"
-#include "../types/Literals.h"
+#include "../types/DynamicLiterals.h"
 #include "../types/Literal.h"
 
 using namespace Dark;
@@ -27,14 +27,14 @@ MinisatSolver::~MinisatSolver() {
   delete solver;
 }
 
-void MinisatSolver::toTmpVec(Literals* lits) {
+void MinisatSolver::toTmpVec(DynamicLiterals* lits) {
   tmpVec.clear();
   for (Literal lit : *lits) {
-    tmpVec.push(static_cast<Minisat::Lit>(lit));
+    tmpVec.push(Minisat::mkLit(var(lit)-1, sign(lit)));
   }
 }
 
-bool MinisatSolver::isUPConsistent(Literals* cube) {
+bool MinisatSolver::isUPConsistent(DynamicLiterals* cube) {
   toTmpVec(cube);
   Minisat::vec<Minisat::Lit> tmp_out;
   return solver->implies(tmpVec, tmp_out);

@@ -5,9 +5,9 @@
  *      Author: markus
  */
 
+#include "../types/DynamicLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Literals.h"
 
 class NotFilter: public ClauseFilter {
 private:
@@ -16,7 +16,7 @@ private:
 public:
   NotFilter(std::unique_ptr<ClauseFilter> argument);
   virtual ~NotFilter();
-  virtual bool meetCriteria(Dark::Literals* clause);
+  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
 };
 
 NotFilter::NotFilter(std::unique_ptr<ClauseFilter> argument) {
@@ -25,7 +25,7 @@ NotFilter::NotFilter(std::unique_ptr<ClauseFilter> argument) {
 
 NotFilter::~NotFilter() { }
 
-bool NotFilter::meetCriteria(Dark::Literals* clause) {
+bool NotFilter::meetCriteria(Dark::DynamicLiterals* clause) {
   return !argument->meetCriteria(clause);
 }
 

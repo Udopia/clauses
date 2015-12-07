@@ -5,23 +5,23 @@
  *      Author: markus
  */
 
+#include "../types/DynamicLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Literals.h"
 
 class ConstantTrueFilter: public ClauseFilter {
 
 public:
   ConstantTrueFilter();
   virtual ~ConstantTrueFilter();
-  virtual bool meetCriteria(Dark::Literals* clause);
+  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
 };
 
 ConstantTrueFilter::ConstantTrueFilter() { }
 
 ConstantTrueFilter::~ConstantTrueFilter() { }
 
-bool ConstantTrueFilter::meetCriteria(Dark::Literals* clause) {
+bool ConstantTrueFilter::meetCriteria(Dark::DynamicLiterals* clause) {
   return clause == clause;
 }
 

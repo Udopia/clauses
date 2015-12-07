@@ -26,7 +26,7 @@ using namespace std;
 
 namespace Dark {
 
-class Literals;
+class DynamicLiterals;
 class ClauseIndex;
 class Gate;
 
@@ -108,7 +108,7 @@ private:
 
   bool isLitMonotonousInput(Literal output);
 
-  Literals* getNextClause(ClauseList* list, RootSelectionMethod method);
+  DynamicLiterals* getNextClause(ClauseList* list, RootSelectionMethod method);
   ClauseList* getNextClauses(ClauseList* list);
 
   void freeAllContent();

@@ -27,7 +27,7 @@
 #include "tools/BlockedClauseDecomposition.h"
 
 #include "types/Literal.h"
-#include "types/Literals.h"
+#include "types/DynamicLiterals.h"
 #include "types/ClauseList.h"
 #include "types/ClauseIndex.h"
 #include "filters/ClauseFilters.h"

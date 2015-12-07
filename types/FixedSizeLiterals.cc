@@ -7,9 +7,8 @@
 
 #include "FixedSizeLiterals.h"
 
-#include "Literals.h"
-
 #include <algorithm>
+#include "DynamicLiterals.h"
 
 namespace Dark {
 
@@ -21,10 +20,10 @@ FixedSizeLiterals::FixedSizeLiterals(int nVars) {
   care = new std::vector<bool>(nVars, false);
 }
 
-FixedSizeLiterals::FixedSizeLiterals(int nVars, Literals* cube) {
+FixedSizeLiterals::FixedSizeLiterals(int nVars, DynamicLiterals* cube) {
   signs = new std::vector<bool>(nVars, false);
   care = new std::vector<bool>(nVars, false);
-  for (Literals::iterator it = cube->begin(); it != cube->end(); it++) {
+  for (DynamicLiterals::iterator it = cube->begin(); it != cube->end(); it++) {
     this->add(*it);
   }
 }
@@ -35,12 +34,12 @@ FixedSizeLiterals::~FixedSizeLiterals() {
 }
 
 void FixedSizeLiterals::add(Literal lit) {
-  Literals::add(lit);
+  DynamicLiterals::add(lit);
   (*signs)[var(lit)] = sign(lit);
   (*care)[var(lit)] = true;
 }
 
-void FixedSizeLiterals::addAll(Literals* fsc) {
+void FixedSizeLiterals::addAll(DynamicLiterals* fsc) {
   for (std::vector<Literal>::iterator it = fsc->begin(); it != fsc->end(); it++) {
     add(*it);
   }
@@ -50,7 +49,7 @@ bool FixedSizeLiterals::satisfies(Literal lit) {
     return (*care)[var(lit)] && (*signs)[var(lit)] == sign(lit);
 }
 
-bool FixedSizeLiterals::satisfies(Literals* clause) {
+bool FixedSizeLiterals::satisfies(DynamicLiterals* clause) {
   for (unsigned int j = 0; j < clause->size(); j++) {
     Literal lit = clause->get(j);
     if (this->satisfies(lit)) {
@@ -60,7 +59,7 @@ bool FixedSizeLiterals::satisfies(Literals* clause) {
   return false;
 }
 
-bool FixedSizeLiterals::falsifies(Literals* clause) {
+bool FixedSizeLiterals::falsifies(DynamicLiterals* clause) {
   for (unsigned int j = 0; j < clause->size(); j++) {
     Literal lit = clause->get(j);
     if (!(*care)[var(lit)] || (*signs)[var(lit)] == sign(lit)) {
@@ -70,7 +69,7 @@ bool FixedSizeLiterals::falsifies(Literals* clause) {
   return true;
 }
 
-int FixedSizeLiterals::cardinality(Literals* clause) {
+int FixedSizeLiterals::cardinality(DynamicLiterals* clause) {
   int card = 0;
   for (unsigned int j = 0; j < clause->size(); j++) {
     Literal lit = clause->get(j);
@@ -81,7 +80,7 @@ int FixedSizeLiterals::cardinality(Literals* clause) {
   return card;
 }
 
-bool FixedSizeLiterals::lessThanOrEqual(Literals* clause, int maxCardinality) {
+bool FixedSizeLiterals::lessThanOrEqual(DynamicLiterals* clause, int maxCardinality) {
   int card = 0;
   for (unsigned int j = 0; j < clause->size(); j++) {
     Literal lit = clause->get(j);

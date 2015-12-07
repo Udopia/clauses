@@ -5,16 +5,16 @@
  *      Author: markus
  */
 
+#include "../types/DynamicLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Literals.h"
 
 class MarkFilter: public ClauseFilter {
 
 public:
   MarkFilter();
   virtual ~MarkFilter();
-  virtual bool meetCriteria(Dark::Literals* clause);
+  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
   virtual void print();
 };
 
@@ -22,7 +22,7 @@ MarkFilter::MarkFilter() { }
 
 MarkFilter::~MarkFilter() { }
 
-bool MarkFilter::meetCriteria(Dark::Literals* clause) {
+bool MarkFilter::meetCriteria(Dark::DynamicLiterals* clause) {
   return clause->isMarked();
 }
 

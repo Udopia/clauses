@@ -5,9 +5,9 @@
  *      Author: markus
  */
 
+#include "../types/DynamicLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Literals.h"
 
 class AndFilter: public ClauseFilter {
 private:
@@ -17,7 +17,7 @@ private:
 public:
   AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right);
   virtual ~AndFilter();
-  virtual bool meetCriteria(Dark::Literals* clause);
+  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
 };
 
 AndFilter::AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right) {
@@ -27,7 +27,7 @@ AndFilter::AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseF
 
 AndFilter::~AndFilter() { }
 
-bool AndFilter::meetCriteria(Dark::Literals* clause) {
+bool AndFilter::meetCriteria(Dark::DynamicLiterals* clause) {
   return left->meetCriteria(clause) && right->meetCriteria(clause);
 }
 

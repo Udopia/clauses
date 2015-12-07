@@ -43,7 +43,7 @@ void ClauseIndex::createVars(Var v) {
   }
 }
 
-void ClauseIndex::add(Literals* clause) {
+void ClauseIndex::add(DynamicLiterals* clause) {
   createVars(clause->maxVar());
   nClauses++;
   for (std::vector<Literal>::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
@@ -62,7 +62,7 @@ void ClauseIndex::addAll(ClauseList* list) {
 }
 
 
-void ClauseIndex::remove(Literals* clause) {
+void ClauseIndex::remove(DynamicLiterals* clause) {
   nClauses--;
   for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); ++it) {
     Literal lit = *it;
@@ -76,14 +76,14 @@ void ClauseIndex::removeAll(ClauseList* list) {
   }
 }
 
-void ClauseIndex::augment(Literals* clause, Literal lit) {
+void ClauseIndex::augment(DynamicLiterals* clause, Literal lit) {
   createVars(var(lit));
   clause->add(lit);
   (*clauseMap)[lit]->add(clause);
 }
 
 void ClauseIndex::augment(ClauseList* clauses, Literal lit) {
-  for (Literals* clause : *clauses) {
+  for (DynamicLiterals* clause : *clauses) {
     augment(clause, lit);
   }
 }

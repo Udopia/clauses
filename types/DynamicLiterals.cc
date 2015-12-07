@@ -5,30 +5,30 @@
  *      Author: markus
  */
 
-#include "Literals.h"
 #include "ClauseList.h"
+#include "DynamicLiterals.h"
 
 namespace Dark {
 
-Literals::Literals() {
+DynamicLiterals::DynamicLiterals() {
   literals = new std::vector<Literal>();
   mark = false;
 }
 
-Literals::Literals(Literal lit) {
+DynamicLiterals::DynamicLiterals(Literal lit) {
   literals = new std::vector<Literal>();
   this->add(lit);
   mark = false;
 }
 
-Literals::Literals(Literal lit1, Literal lit2) {
+DynamicLiterals::DynamicLiterals(Literal lit1, Literal lit2) {
   literals = new std::vector<Literal>();
   this->add(lit1);
   this->add(lit2);
   mark = false;
 }
 
-Literals::Literals(Literal lit1, Literal lit2, Literal lit3) {
+DynamicLiterals::DynamicLiterals(Literal lit1, Literal lit2, Literal lit3) {
   literals = new std::vector<Literal>();
   this->add(lit1);
   this->add(lit2);
@@ -36,16 +36,16 @@ Literals::Literals(Literal lit1, Literal lit2, Literal lit3) {
   mark = false;
 }
 
-Literals::Literals(LiteralList* lits) {
+DynamicLiterals::DynamicLiterals(LiteralList* lits) {
   literals = lits;
   mark = false;
 }
 
-Literals::~Literals() {
+DynamicLiterals::~DynamicLiterals() {
   delete literals;
 }
 
-void Literals::Init() {
+void DynamicLiterals::Init() {
   literals = new std::vector<Literal>();
 }
 
@@ -53,30 +53,30 @@ void Literals::Init() {
  * Manipulators
  */
 
-void Literals::add(Literal lit) {
+void DynamicLiterals::add(Literal lit) {
   if (max_var < var(lit)) max_var = var(lit);
   literals->push_back(lit);
 }
 
-void Literals::addAll(Literals* clause) {
+void DynamicLiterals::addAll(DynamicLiterals* clause) {
   if (max_var < clause->maxVar()) max_var = clause->maxVar();
   literals->insert(literals->end(), clause->begin(), clause->end());
 }
 
-void Literals::addAll(std::vector<Literal>* clause) {
+void DynamicLiterals::addAll(std::vector<Literal>* clause) {
   for (std::vector<Literal>::iterator it = literals->begin(); it != literals->end(); it++) {
     this->add(*it);
   }
 }
 
 
-Literal Literals::removeLast() {
+Literal DynamicLiterals::removeLast() {
   Literal lit = this->getLast();
   literals->pop_back();
   return lit;
 }
 
-bool Literals::remove(Literal literal) {
+bool DynamicLiterals::remove(Literal literal) {
   for (std::vector<Literal>::iterator it = literals->begin(); it != literals->end(); it++) {
     if (literal == *it) {
       literals->erase(it);
@@ -86,64 +86,64 @@ bool Literals::remove(Literal literal) {
   return false;
 }
 
-void Literals::removeAll(Literals* clause) {
+void DynamicLiterals::removeAll(DynamicLiterals* clause) {
   for (std::vector<Literal>::iterator it = clause->begin(); it != clause->end(); it++) {
     remove(*it);
   }
 }
 
-void Literals::sort() {
+void DynamicLiterals::sort() {
   std::sort(literals->begin(), literals->end());
 }
 
-Literals* Literals::slice(int start) {
+DynamicLiterals* DynamicLiterals::slice(int start) {
   return this->slice(start, literals->size());
 }
 
 /*
  * returns list in interval [start, end)
  */
-Literals* Literals::slice(int start, int end) {
+DynamicLiterals* DynamicLiterals::slice(int start, int end) {
   std::vector<Literal>* result = new std::vector<Literal>();
   int n = end - start;
   for (int i = 0; i < n; i++) {
     result->push_back(this->get(start + i));
   }
-  return new Literals(result);
+  return new DynamicLiterals(result);
 }
 
 /**
  * Accessors
  */
-Literals::iterator Literals::begin() {
+DynamicLiterals::iterator DynamicLiterals::begin() {
   return literals->begin();
 }
 
-Literals::iterator Literals::end() {
+DynamicLiterals::iterator DynamicLiterals::end() {
   return literals->end();
 }
 
-Literal Literals::getFirst() {
+Literal DynamicLiterals::getFirst() {
   return *(literals->begin());
 }
 
-Literal Literals::getLast() {
+Literal DynamicLiterals::getLast() {
   return *(literals->rbegin());
 }
 
-Literal Literals::get(int i) {
+Literal DynamicLiterals::get(int i) {
   return (*literals)[i];
 }
 
-unsigned int Literals::size() {
+unsigned int DynamicLiterals::size() {
   return literals->size();
 }
 
-Literal& Literals::operator[] (const int i) {
+Literal& DynamicLiterals::operator[] (const int i) {
     return (*literals)[i];
 }
 
-int Literals::pos(Literal literal) {
+int DynamicLiterals::pos(Literal literal) {
   for (unsigned int i = 0; i < literals->size(); i++) {
     if ((*literals)[i] == literal) {
       return i;
@@ -152,11 +152,11 @@ int Literals::pos(Literal literal) {
   return -1;
 }
 
-bool Literals::contains(Literal literal) {
+bool DynamicLiterals::contains(Literal literal) {
   return std::find(literals->begin(), literals->end(), literal) != literals->end();
 }
 
-bool Literals::entails(Literals* clause) {
+bool DynamicLiterals::entails(DynamicLiterals* clause) {
   for (iterator it = literals->begin(); it != literals->end(); ++it) {
     if (!clause->contains(*it)) {
       return false;
@@ -165,14 +165,14 @@ bool Literals::entails(Literals* clause) {
   return true;
 }
 
-bool Literals::equals(Literals* clause) {
+bool DynamicLiterals::equals(DynamicLiterals* clause) {
   return this->entails(clause) && clause->entails(this);
 }
 
 /**
  * Output
  */
-void Literals::print(FILE* out) {
+void DynamicLiterals::print(FILE* out) {
   fprintf(out, "(");
   for (iterator it = literals->begin(); it != literals->end(); ++it) {
     fprintf(out, "%s%s%i", it != literals->begin() ? "," : "", sign(*it) ? "-" : "", 1+var(*it));
@@ -180,19 +180,19 @@ void Literals::print(FILE* out) {
   fprintf(out, ")");
 }
 
-void Literals::println(FILE* out) {
+void DynamicLiterals::println(FILE* out) {
   print(out);
   fprintf(out, "\n");
 }
 
-void Literals::printDimacs(FILE* out) {
+void DynamicLiterals::printDimacs(FILE* out) {
   for (iterator it = literals->begin(); it != literals->end(); ++it) {
     fprintf(out, "%s%i ", sign(*it) ? "-" : "", 1+var(*it));
   }
   fprintf(out, "0\n");
 }
 
-std::string* Literals::toString() {
+std::string* DynamicLiterals::toString() {
   std::string* val = new std::string();
   val->append("(");
   for (iterator it = literals->begin(); it != literals->end(); ++it) {
@@ -204,7 +204,7 @@ std::string* Literals::toString() {
   return val;
 }
 
-Literals* Literals::allBut(Literal exclude) {
+DynamicLiterals* DynamicLiterals::allBut(Literal exclude) {
   std::vector<Literal>* vec = new std::vector<Literal>();
   for (LiteralList::iterator it = literals->begin(); it != literals->end(); ++it) {
     Literal lit = *it;
@@ -212,30 +212,30 @@ Literals* Literals::allBut(Literal exclude) {
       vec->push_back(lit);
     }
   }
-  return new Literals(vec);
+  return new DynamicLiterals(vec);
 }
 
 // from clause
-void Literals::setMarked() {
+void DynamicLiterals::setMarked() {
   mark = true;
 }
 
-void Literals::unsetMarked() {
+void DynamicLiterals::unsetMarked() {
   mark = false;
 }
 
-bool Literals::isMarked() {
+bool DynamicLiterals::isMarked() {
   return mark;
 }
 
-void Literals::inlineNegate() {
+void DynamicLiterals::inlineNegate() {
   for (unsigned int i = 0; i < size(); i++) {
     (*literals)[i] = ~(*literals)[i];
   }
 }
 
-bool Literals::isBlockedBy(Literal blocking, Literals* clause) {
-  for (Literals::iterator it = clause->begin(); it != clause->end(); ++it) {
+bool DynamicLiterals::isBlockedBy(Literal blocking, DynamicLiterals* clause) {
+  for (DynamicLiterals::iterator it = clause->begin(); it != clause->end(); ++it) {
     Literal& lit = *it;
     if (lit != ~blocking && this->contains(~lit)) {
       return true;
@@ -245,25 +245,25 @@ bool Literals::isBlockedBy(Literal blocking, Literals* clause) {
 }
 
 // from cube
-Literals* Literals::negate() {
-  Literals* lits = new Literals();
+DynamicLiterals* DynamicLiterals::negate() {
+  DynamicLiterals* lits = new DynamicLiterals();
   for (iterator it = begin(); it != end(); ++it) {
     lits->add(~(*it));
   }
   return lits;
 }
 
-void Literals::clear() {
+void DynamicLiterals::clear() {
   literals->clear();
 }
 
-Literals* Literals::clone() {
-  Literals* lits = new Literals();
+DynamicLiterals* DynamicLiterals::clone() {
+  DynamicLiterals* lits = new DynamicLiterals();
   lits->addAll(this);
   return lits;
 }
 
-bool Literals::isConsistentWith(Literals* lits) {
+bool DynamicLiterals::isConsistentWith(DynamicLiterals* lits) {
   for (unsigned int i = 0, j = 0; i < this->size() && j < lits->size(); ) {
     Literal lit1 = this->get(i);
     Literal lit2 = lits->get(j);
@@ -282,7 +282,7 @@ bool Literals::isConsistentWith(Literals* lits) {
   return true;
 }
 
-int Literals::cardinality(Literals* lits) {
+int DynamicLiterals::cardinality(DynamicLiterals* lits) {
   int count = 0;
   for (unsigned int j = 0; j < lits->size(); j++) {
     if (this->contains(lits->get(j))) {
@@ -292,7 +292,7 @@ int Literals::cardinality(Literals* lits) {
   return count;
 }
 
-bool Literals::satisfies(Literals* lits) {
+bool DynamicLiterals::satisfies(DynamicLiterals* lits) {
   for (unsigned int j = 0; j < lits->size(); j++) {
     if (this->contains(lits->get(j))) {
       return true;
@@ -301,7 +301,7 @@ bool Literals::satisfies(Literals* lits) {
   return false;
 }
 
-bool Literals::falsifies(Literals* lits) {
+bool DynamicLiterals::falsifies(DynamicLiterals* lits) {
   for (unsigned int j = 0; j < lits->size(); j++) {
     if (!this->contains(~(lits->get(j)))) {
       return false;
@@ -310,10 +310,10 @@ bool Literals::falsifies(Literals* lits) {
   return true;
 }
 
-ClauseList* Literals::checkSatisfied(ClauseList* list) {
+ClauseList* DynamicLiterals::checkSatisfied(ClauseList* list) {
   ClauseList* notSatisfied = new ClauseList();
   for (unsigned int i = 0; i < list->size(); i++) {
-    Literals* lits = list->get(i);
+    DynamicLiterals* lits = list->get(i);
     if (!this->satisfies(lits)) {
       notSatisfied->add(lits);
     }

@@ -9,25 +9,25 @@
 #define FIXEDSIZECUBE_H_
 
 #include "Literal.h"
-#include "Literals.h"
 #include <vector>
+#include "DynamicLiterals.h"
 
 namespace Dark {
 
-class FixedSizeLiterals: public Literals {
+class FixedSizeLiterals: public DynamicLiterals {
 public:
   FixedSizeLiterals(int nVars);
-  FixedSizeLiterals(int nVars, Literals* list);
+  FixedSizeLiterals(int nVars, DynamicLiterals* list);
   virtual ~FixedSizeLiterals();
 
   void add(Literal lit);
-  void addAll(Literals* fsc);
+  void addAll(DynamicLiterals* fsc);
 
   bool satisfies(Literal literal);
-  bool satisfies(Literals* clause);
-  bool falsifies(Literals* clause);
-  int cardinality(Literals* clause);
-  bool lessThanOrEqual(Literals* clause, int maxCardinality);
+  bool satisfies(DynamicLiterals* clause);
+  bool falsifies(DynamicLiterals* clause);
+  int cardinality(DynamicLiterals* clause);
+  bool lessThanOrEqual(DynamicLiterals* clause, int maxCardinality);
 
 private:
   std::vector<bool>* signs;

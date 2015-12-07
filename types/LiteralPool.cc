@@ -7,77 +7,80 @@
 
 #include "LiteralPool.h"
 
-#include "Literals.h"
 #include "Literal.h"
 #include <vector>
+#include <cstring>
+#include "DynamicLiterals.h"
 
 namespace Dark {
-/**
-LiteralPool::LiteralPool(int clausePoolSize, int literalPoolSize) {
-  this->clausePoolSize = clausePoolSize;
-  this->freeClauses = new std::vector<Literals*>(clausePoolSize);
-  this->clausePools = new std::vector<Literals*>();
-  newClausePool();
-  this->literalPool = (Literal*)malloc(literalPoolSize * sizeof(Literal));
-  this->lpSize = literalPoolSize;
-  this->lpOffset = 0;
+
+LiteralPool::LiteralPool() {
+  this->size = initialSize;
+  this->pool = (Literal*)malloc(size * sizeof(Literal));
+  this->cursor = pool;
 }
 
 LiteralPool::~LiteralPool() {
-  for (Literals* pool : clausePools) {
-    delete pool;
-  }
-  delete clausePools;
-  delete freeClauses;
+  delete pool;
 }
 
-void LiteralPool::newClausePool() {
-  Literals* pool = (Literals*)malloc(clausePoolSize * sizeof(Literals));
-  clausePools->push_back(pool);
-  for (int i = 0; i < clausePoolSize; i++) {
-    freeClauses->push_back(pool+i);
+Literal LiteralPool::get(int i) {
+  return pool[i];
+}
+
+Literal* LiteralPool::resolve(Literal* offset) {
+  return (Literal*)(pool + (unsigned int)offset);
+}
+
+Literal* LiteralPool::alloc(unsigned int count) {
+  size_t offset = cursor - pool;
+  if (offset + count + 2 >= size) {
+    grow();
+  }
+  cursor += count;
+  *(cursor++) = litFalse;
+  *(cursor++) = litFalse;
+  return (Literal*)offset;
+}
+
+Literal* LiteralPool::alloc(Literal literals[], unsigned int count) {
+  size_t offset = cursor - pool; // store offset
+  if (offset + count + 2 >= size) { // grow to size
+    grow();
+  }
+  memcpy(cursor, literals, count * sizeof(Literal)); // copy literals
+  cursor += count;
+  *(cursor++) = litFalse;
+  *(cursor++) = litFalse;
+  return (Literal*)offset; // return offset
+}
+
+Literal* LiteralPool::alloc(Literal literals[]) {
+  unsigned int count = 0;
+  while (literals[count] != litFalse) { // determine count in zero terminated array
+    count++;
+  }
+  size_t offset = cursor - pool;
+  if (offset + count + 2 >= size) {
+    grow();
+  }
+  memcpy(cursor, literals, count * sizeof(Literal));
+  cursor += count;
+  *(cursor++) = litFalse;
+  *(cursor++) = litFalse;
+  return (Literal*)offset;
+}
+
+void LiteralPool::free(Literal* ref) {
+  while (*ref != litFalse) {
+    *ref = litFalse;
+    ref++;
   }
 }
 
-void LiteralPool::resizeLiteralPool() {
-  lpSize *= 2;
-  lpOffset = 0;
-  Literal* newPool = (Literal*)malloc(lpSize * sizeof(Literal));
-  // copy the literals of all active clauses to the new pool and update their literal-pointer
-  for (Literals* pool : clausePools) {
-    for (int i = 0; i < clausePoolSize; i++) {
-      Literals* clause = pool[i];
-      Literal* address = newPool[lpOffset];
-      for (int i = 0; i < clause->size(); i++) {
-        literalPool[lpOffset++] = clause->literals[i];
-      }
-      clause->literals = address;
-    }
-  }
-  delete literalPool;
-  literalPool = newPool;
+void LiteralPool::grow() {
+  size *= 2;
+  pool = (Literal*)realloc(pool, size * sizeof(Literal));
 }
 
-Literals* LiteralPool::alloc() {
-  if (freeClauses->size() == 0) {
-    newClausePool();
-  }
-  return freeClauses->pop_back();
-}
-
-void LiteralPool::free(Literals* clause) {
-  freeClauses->push_back(clause);
-}
-
-Literal* LiteralPool::insertLiterals(Literal literals[], int count) {
-  if (lpSize - lpOffset <= count) {
-    resizeLiteralPool();
-  }
-  Literal* address = literalPool[lpOffset];
-  for (int i = 0; i < count; i++) {
-    literalPool[lpOffset++] = literals[i];
-  }
-  return address;
-}
-*/
 } /* namespace Dark */

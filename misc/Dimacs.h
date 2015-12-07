@@ -25,8 +25,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "ParseUtils.h"
 #include "../types/Literal.h"
-#include "../types/Literals.h"
 #include "../types/ClauseList.h"
+#include "../types/DynamicLiterals.h"
 
 //=================================================================================================
 // DIMACS Parser:
@@ -61,11 +61,11 @@ private:
   Dark::ClauseList* clauses;
 
   template<class B>
-  Dark::Literals* readClause(B& in) {
-    Dark::Literals* clause = new Dark::Literals();
+  Dark::DynamicLiterals* readClause(B& in) {
+    Dark::DynamicLiterals* clause = new Dark::DynamicLiterals();
     int parsed_lit = parseInt(in);
     while (parsed_lit != 0) {
-      int var = abs(parsed_lit)-1;
+      int var = abs(parsed_lit);
       while (var >= trueVars) trueVars++;
       clause->add(mkLit(var, parsed_lit < 0));
       parsed_lit = parseInt(in);

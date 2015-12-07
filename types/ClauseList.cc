@@ -19,23 +19,23 @@ namespace Dark {
  * Constructor
  */
 ClauseList::ClauseList() {
-  clauses = new vector<Literals*>();
+  clauses = new vector<DynamicLiterals*>();
   max_var = 0;
 }
 
 ClauseList::ClauseList(ClauseList* list) {
-  clauses = new vector<Literals*>();
+  clauses = new vector<DynamicLiterals*>();
   max_var = 0;
   if (list != NULL) {
     this->addAll(list);
   }
 }
 
-ClauseList::ClauseList(std::vector<Literals*>* vec) {
+ClauseList::ClauseList(std::vector<DynamicLiterals*>* vec) {
   if (vec != NULL) {
     clauses = vec;
   } else {
-    clauses = new vector<Literals*>();
+    clauses = new vector<DynamicLiterals*>();
   }
   max_var = 0;
 }
@@ -48,17 +48,17 @@ ClauseList::~ClauseList() {
 }
 
 void ClauseList::freeClauses() {
-  for (std::vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); ++it) {
+  for (std::vector<DynamicLiterals*>::iterator it = clauses->begin(); it != clauses->end(); ++it) {
     delete *it;
   }
 }
 
-void ClauseList::add(Literals* clause) {
+void ClauseList::add(DynamicLiterals* clause) {
   max_var = std::max(max_var, clause->maxVar());
   clauses->push_back(clause);
 }
 
-void ClauseList::remove(Literals* clause) {
+void ClauseList::remove(DynamicLiterals* clause) {
   (*clauses)[pos(clause)] = getLast();
   clauses->pop_back();
 }
@@ -74,15 +74,15 @@ void ClauseList::removeAll(ClauseList* list) {
   }
 }
 
-Literals* ClauseList::get(int i) {
+DynamicLiterals* ClauseList::get(int i) {
   return (*clauses)[i];
 }
 
-Literals* ClauseList::getFirst() {
+DynamicLiterals* ClauseList::getFirst() {
   return (*clauses)[0];
 }
 
-Literals* ClauseList::getLast() {
+DynamicLiterals* ClauseList::getLast() {
   return (*clauses)[clauses->size()-1];
 }
 
@@ -104,18 +104,18 @@ ClauseList* ClauseList::slice(unsigned int from, unsigned int to) {
   } else if (to >= this->size()) {
     return new ClauseList(this->clauses);
   } else {
-    return new ClauseList(new vector<Literals*>(clauses->begin() + from, clauses->begin() + (to - from)));
+    return new ClauseList(new vector<DynamicLiterals*>(clauses->begin() + from, clauses->begin() + (to - from)));
   }
 }
 
 // sort clauses by given score
-void ClauseList::sort(map<Literals*, int>* clauseScore) {
+void ClauseList::sort(map<DynamicLiterals*, int>* clauseScore) {
   struct comparator {
-    comparator(map<Literals*, int>* key) : key(key) {};
-    bool operator() (Literals* a, Literals* b) {
+    comparator(map<DynamicLiterals*, int>* key) : key(key) {};
+    bool operator() (DynamicLiterals* a, DynamicLiterals* b) {
       return (*key)[a] < (*key)[b];
     }
-    map<Literals*, int>* key;
+    map<DynamicLiterals*, int>* key;
   };
   std::sort(clauses->begin(), clauses->end(), comparator(clauseScore));
 }
@@ -123,27 +123,27 @@ void ClauseList::sort(map<Literals*, int>* clauseScore) {
 /**
  * Comparative Methods
  */
-int ClauseList::pos(Literals* clause) {
+int ClauseList::pos(DynamicLiterals* clause) {
   for (unsigned int i = 0; i < size(); ++i) {
     if (get(i) == clause) return i;
   }
   return -1;
 }
 
-Literals* ClauseList::find(Literals* clause) {
+DynamicLiterals* ClauseList::find(DynamicLiterals* clause) {
   for (unsigned int i = 0; i < size(); ++i) {
     if (get(i)->equals(clause)) return get(i);
   }
   return NULL;
 }
 
-bool ClauseList::contains(Literals* clause) {
+bool ClauseList::contains(DynamicLiterals* clause) {
   return find(clause) != NULL;
 }
 
 ClauseList* ClauseList::getByCriteria(unique_ptr<ClauseFilter> filter) {
   ClauseList* result = new ClauseList();
-  for (vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+  for (vector<DynamicLiterals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
     if (filter->meetCriteria(*it)) {
       result->add(*it);
     }
@@ -153,8 +153,8 @@ ClauseList* ClauseList::getByCriteria(unique_ptr<ClauseFilter> filter) {
 
 ClauseList* ClauseList::removeByCriteria(unique_ptr<ClauseFilter> filter) {
   ClauseList* result = new ClauseList();
-  vector<Literals*>* nextClauses = new vector<Literals*>();
-  for (vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+  vector<DynamicLiterals*>* nextClauses = new vector<DynamicLiterals*>();
+  for (vector<DynamicLiterals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
     if (filter->meetCriteria(*it)) {
       result->add(*it);
     } else {
@@ -167,8 +167,8 @@ ClauseList* ClauseList::removeByCriteria(unique_ptr<ClauseFilter> filter) {
 }
 
 void ClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
-  vector<Literals*>* nextClauses = new vector<Literals*>();
-  for (vector<Literals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+  vector<DynamicLiterals*>* nextClauses = new vector<DynamicLiterals*>();
+  for (vector<DynamicLiterals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
     if (!filter->meetCriteria(*it)) {
       nextClauses->push_back(*it);
     }
@@ -177,9 +177,9 @@ void ClauseList::dumpByCriteria(unique_ptr<ClauseFilter> filter) {
   clauses = nextClauses;
 }
 
-bool ClauseList::isBlockedBy(Literal blocking, Literals* clause) {
+bool ClauseList::isBlockedBy(Literal blocking, DynamicLiterals* clause) {
   for (iterator it = begin(); it != end(); it++) {
-    Literals* cl = *it;
+    DynamicLiterals* cl = *it;
     if (!(cl->isBlockedBy(blocking, clause))) {
       return false;
     }
@@ -189,7 +189,7 @@ bool ClauseList::isBlockedBy(Literal blocking, Literals* clause) {
 
 bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
   for (iterator it = list->begin(); it != list->end(); it++) {
-    Literals* cl = *it;
+    DynamicLiterals* cl = *it;
     if (!(this->isBlockedBy(lit, cl))) {
       return false;
     }
@@ -198,8 +198,8 @@ bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
 }
 
 bool ClauseList::matchesFullGatePattern(Literal lit, ClauseList* other) {
-  Literals* thisLits = this->getUnionOfLiterals();
-  Literals* otherLits = other->getUnionOfLiterals();
+  DynamicLiterals* thisLits = this->getUnionOfLiterals();
+  DynamicLiterals* otherLits = other->getUnionOfLiterals();
   otherLits->inlineNegate();
   if (!thisLits->equals(otherLits)) {
     return false;
@@ -216,10 +216,10 @@ bool ClauseList::matchesFullGatePattern(Literal lit, ClauseList* other) {
   return false;
 }
 
-Literals* ClauseList::getUnionOfLiterals() {
-  Literals* clause = new Literals();
+DynamicLiterals* ClauseList::getUnionOfLiterals() {
+  DynamicLiterals* clause = new DynamicLiterals();
   for (ClauseList::iterator it = this->begin(); it != this->end(); it++) {
-    for (Literals::iterator it2 = (*it)->begin(); it2 != (*it)->end(); it2++) {
+    for (DynamicLiterals::iterator it2 = (*it)->begin(); it2 != (*it)->end(); it2++) {
       if (!clause->contains(*it2)) {
         clause->add(*it2);
       }
@@ -261,7 +261,7 @@ void ClauseList::unmarkAll() {
  */
 void ClauseList::print(FILE* out) {
   for (unsigned int i = 0; i < clauses->size(); ++i) {
-    Dark::Literals* clause = (*clauses)[i];
+    Dark::DynamicLiterals* clause = (*clauses)[i];
     if (clause != NULL) {
       clause->print(out);
     } else {
@@ -272,7 +272,7 @@ void ClauseList::print(FILE* out) {
 
 void ClauseList::printDimacs(FILE* out) {
   for (unsigned int i = 0; i < clauses->size(); ++i) {
-    Dark::Literals* clause = (*clauses)[i];
+    Dark::DynamicLiterals* clause = (*clauses)[i];
     if (clause != NULL) {
       clause->printDimacs(out);
     } else {

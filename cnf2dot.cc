@@ -20,7 +20,7 @@
 #include "tools/Gate.h"
 
 #include "types/Literal.h"
-#include "types/Literals.h"
+#include "types/DynamicLiterals.h"
 #include "types/ClauseList.h"
 
 #include "filters/ClauseFilters.h"
@@ -69,7 +69,7 @@ void graphviz_create_child_nodes(GateAnalyzer* analyzer, Literal parent) {
         fprintf(stdout, "  N%i [label=\"\" shape=point]\n", clauseNodeId);
         fprintf(stdout, "  N%i->N%i\n", parentNodeId, clauseNodeId);
 
-        for (Literals::iterator it2 = (*clause)->begin(); it2 != (*clause)->end(); it2++) {
+        for (DynamicLiterals::iterator it2 = (*clause)->begin(); it2 != (*clause)->end(); it2++) {
           Literal literal = *it2;
           int childNodeId = 2*var(literal)+(sign(literal)?1:0);
 

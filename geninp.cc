@@ -26,7 +26,7 @@
 #include "tools/GateAnalyzer.h"
 
 #include "types/Literal.h"
-#include "types/Literals.h"
+#include "types/DynamicLiterals.h"
 #include "types/ClauseList.h"
 
 #include "filters/ClauseFilters.h"

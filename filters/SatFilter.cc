@@ -5,35 +5,35 @@
  *      Author: markus
  */
 
+#include "../types/DynamicLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Literals.h"
 
 class SatFilter: public ClauseFilter {
 
 private:
-  Dark::Literals* model;
+  Dark::DynamicLiterals* model;
 
 public:
-  SatFilter(Dark::Literals* model);
+  SatFilter(Dark::DynamicLiterals* model);
   virtual ~SatFilter();
-  virtual bool meetCriteria(Dark::Literals* clause);
+  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
 };
 
-SatFilter::SatFilter(Dark::Literals* model) {
+SatFilter::SatFilter(Dark::DynamicLiterals* model) {
   this->model = model;
 }
 
 SatFilter::~SatFilter() { }
 
-bool SatFilter::meetCriteria(Dark::Literals* clause) {
+bool SatFilter::meetCriteria(Dark::DynamicLiterals* clause) {
   return model->satisfies(clause);
 }
 
 /**
  * Implementation for IClauseFilters method
  */
-std::unique_ptr<ClauseFilter> createSatFilter(Dark::Literals* model) {
+std::unique_ptr<ClauseFilter> createSatFilter(Dark::DynamicLiterals* model) {
   return std::unique_ptr<ClauseFilter>(new SatFilter(model));
 }
 

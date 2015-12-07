@@ -11,7 +11,6 @@
 #include <deque>
 
 #include "../types/Literal.h"
-#include "../types/Literals.h"
 #include "../types/ClauseList.h"
 #include "../types/ClauseIndex.h"
 
@@ -24,6 +23,8 @@
 #include "GateAnalyzer.h"
 
 #include <assert.h>
+
+#include "../types/DynamicLiterals.h"
 #include "../types/FixedSizeLiterals.h"
 
 #define VERBOSITY 0
@@ -43,7 +44,7 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList) {
 
   // introduce new variable and unit-clause
   root = mkLit(clauses->newVar(), false);
-  Literals* rootClause = new Literals(root);
+  DynamicLiterals* rootClause = new DynamicLiterals(root);
   rootClause->setMarked();
 
   // create some data-structures for each variable
@@ -201,17 +202,17 @@ ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
   return index->getClauses(min);
 }
 
-Literals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
+DynamicLiterals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
   switch (method) {
   case FIRST_CLAUSE: {
     return list->getFirst();
   }
   case MAX_ID: {
     Literal maxLit = mkLit(0, false);
-    Literals* result = NULL;
+    DynamicLiterals* result = NULL;
     for (ClauseList::iterator clause = list->begin(); clause != list->end();
         clause++) {
-      for (Literals::iterator clit = (*clause)->begin();
+      for (DynamicLiterals::iterator clit = (*clause)->begin();
           clit != (*clause)->end(); clit++) {
         if (var(*clit) > var(maxLit)) {
           maxLit = *clit;
@@ -242,16 +243,16 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
   for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    Literals* next = getNextClause(remainder, selection);
+    DynamicLiterals* next = getNextClause(remainder, selection);
 
     next->setMarked();
     getOrCreateGate(root)->addForwardClause(next);
-    for (Literals::iterator it = next->begin(); it != next->end(); it++) {
+    for (DynamicLiterals::iterator it = next->begin(); it != next->end(); it++) {
       setParent(root, *it);
     }
     index->augment(next, ~root);
 
-    for (Literals::iterator it = next->begin(); it != next->end(); it++) {
+    for (DynamicLiterals::iterator it = next->begin(); it != next->end(); it++) {
       if (*it != ~root)
         analyzeEncoding(*it, equivalence);
     }
@@ -259,11 +260,11 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
   }
 
   for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
-    Literals* next = *it;
+    DynamicLiterals* next = *it;
     next->setMarked();
     index->augment(next, ~root);
     getOrCreateGate(root)->addForwardClause(next);
-    for (Literals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
+    for (DynamicLiterals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
       setParent(root, *it2);
     }
   }
@@ -345,23 +346,23 @@ bool GateAnalyzer::isFullEncoding(Literal output, ClauseList* fwd,
 
 bool GateAnalyzer::semanticCheck(Literal output, ClauseList* fwd) {
   int i = 0;
-  vector<Literals*> cubes(fwd->size() + 1);
-  cubes[0] = new Literals(~output);
-  for (Literals* clause : *fwd) {
+  vector<DynamicLiterals*> cubes(fwd->size() + 1);
+  cubes[0] = new DynamicLiterals(~output);
+  for (DynamicLiterals* clause : *fwd) {
     cubes[++i] = clause->allBut(~output);
   }
 
   i = 0;
   vector<int> positions(cubes.size(), 0);
   vector<int> maxima(cubes.size());
-  for (Literals* cube : cubes) {
+  for (DynamicLiterals* cube : cubes) {
     maxima[i++] = cube->size();
   }
 
-  Literals* assumptions = new Literals();
+  DynamicLiterals* assumptions = new DynamicLiterals();
   do {
     i = 0;
-    for (Literals* cube : cubes) {
+    for (DynamicLiterals* cube : cubes) {
       assumptions->add(cube->get(positions[i++]));
     }
     if (getMinisatSolver()->isUPConsistent(assumptions)) {

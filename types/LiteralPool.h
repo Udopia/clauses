@@ -8,42 +8,33 @@
 #ifndef TYPES_LITERALPOOL_H_
 #define TYPES_LITERALPOOL_H_
 
+#include "DynamicLiterals.h"
 #include "Literal.h"
-#include "Literals.h"
-#include <vector>
 
 namespace Dark {
 
 class LiteralPool {
-
 private:
-  /**
-   * Keep a list of fixed size pools and
-   * keep track of the freed clauses
-   */
-  std::vector<Literals*>* clausePools;
-  int clausePoolSize;
-  std::vector<Literals*>* freeClauses;
+  unsigned int size;
+  Literal* cursor;
+  Literal* pool;
 
-  /**
-   * Track the literals in a separate pool that may fragment
-   * Keep track of the size and the cursor position
-   */
-  Literal* literalPool;
-  int lpOffset;
-  int lpSize;
-
-  void newClausePool();
-  void resizeLiteralPool();
+  void grow();
 
 public:
-  LiteralPool(int clausePoolSize = 100000, int literalPoolSize = 500000);
+  unsigned int initialSize = 100000;
+
+  LiteralPool();
   virtual ~LiteralPool();
 
-  Literals* alloc();
-  void free(Literals*);
+  Literal get(int i);
+  Literal* resolve(Literal*);
 
-  Literal* insertLiterals(Literal literals[], int count);
+  Literal* alloc(unsigned int count);
+  Literal* alloc(Literal literals[], unsigned int count);
+  Literal* alloc(Literal literals[]);
+
+  void free(Literal* reference);
 };
 
 } /* namespace Dark */

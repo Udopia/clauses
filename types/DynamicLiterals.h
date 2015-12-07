@@ -18,7 +18,7 @@ namespace Dark {
 
 class ClauseList;
 
-class Literals {
+class DynamicLiterals {
 
 private:
   typedef std::vector<Literal> LiteralList;
@@ -35,26 +35,26 @@ protected:
 public:
   typedef LiteralList::iterator iterator;
 
-  Literals();
-  Literals(Literal lit);
-  Literals(Literal lit1, Literal lit2);
-  Literals(Literal lit1, Literal lit2, Literal lit3);
-  Literals(LiteralList* lits);
+  DynamicLiterals();
+  DynamicLiterals(Literal lit);
+  DynamicLiterals(Literal lit1, Literal lit2);
+  DynamicLiterals(Literal lit1, Literal lit2, Literal lit3);
+  DynamicLiterals(LiteralList* lits);
 
-  virtual ~Literals();
+  virtual ~DynamicLiterals();
 
   int maxVar() { return max_var; }
 
   void add(Literal lit);
-  void addAll(Literals* clause);
+  void addAll(DynamicLiterals* clause);
   void addAll(std::vector<Literal>* clause);
   bool remove(Literal);
   Literal removeLast();
-  void removeAll(Literals* clause);
+  void removeAll(DynamicLiterals* clause);
   void sort();
 
-  Literals* slice(int start);
-  Literals* slice(int start, int end);
+  DynamicLiterals* slice(int start);
+  DynamicLiterals* slice(int start, int end);
 
   iterator begin();
   iterator end();
@@ -67,8 +67,8 @@ public:
   int pos(Literal literal);
 
   bool contains(Literal literal);
-  bool entails(Literals* clause);
-  bool equals(Literals* clause);
+  bool entails(DynamicLiterals* clause);
+  bool equals(DynamicLiterals* clause);
 
   void print(FILE* out = stdout);
   void println(FILE* out = stdout);
@@ -76,7 +76,7 @@ public:
 
   std::string* toString();
 
-  Literals* allBut(Literal lit);
+  DynamicLiterals* allBut(Literal lit);
 
   // from clause
   void setMarked();
@@ -85,19 +85,19 @@ public:
 
   void inlineNegate();
 
-  bool isBlockedBy(Literal blocking, Literals* clause);
+  bool isBlockedBy(Literal blocking, DynamicLiterals* clause);
 
   // from cube
-  Literals* negate();
+  DynamicLiterals* negate();
   void clear();
-  bool isConsistentWith(Literals* cube);
+  bool isConsistentWith(DynamicLiterals* cube);
 
-  int cardinality(Literals* clause);
-  bool satisfies(Literals* clause);
-  bool falsifies(Literals* clause);
+  int cardinality(DynamicLiterals* clause);
+  bool satisfies(DynamicLiterals* clause);
+  bool falsifies(DynamicLiterals* clause);
 
   ClauseList* checkSatisfied(ClauseList* list);
-  Literals* clone();
+  DynamicLiterals* clone();
 };
 
 }

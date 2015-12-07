@@ -8,7 +8,7 @@
 
 #include "Projection.h"
 
-#include "../types/Literals.h"
+#include "../types/DynamicLiterals.h"
 
 
 using namespace std;
@@ -57,8 +57,8 @@ bool Projection::contains(int num) {
   return false;
 }
 
-Literals* Projection::project(Literals* cube) {
-  Literals* result = new Literals();
+DynamicLiterals* Projection::project(DynamicLiterals* cube) {
+  DynamicLiterals* result = new DynamicLiterals();
   for (std::vector<Literal>::iterator it = cube->begin(); it != cube->end(); ++it) {
     Literal lit = *it;
     if (this->contains(var(lit)+1)) {

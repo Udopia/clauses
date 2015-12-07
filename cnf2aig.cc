@@ -20,7 +20,7 @@
 #include "tools/GateAnalyzer.h"
 
 #include "types/Literal.h"
-#include "types/Literals.h"
+#include "types/DynamicLiterals.h"
 #include "types/ClauseList.h"
 
 #include "filters/ClauseFilters.h"
@@ -47,7 +47,7 @@ public:
 class AndGate {
 public:
   Literal output;
-  Literals* conj;
+  DynamicLiterals* conj;
 
   void println() {
     fprintf(stderr, "%s%i = AND%s\n", sign(output)?"-":"", var(output)+1, conj->toString()->c_str());
@@ -83,7 +83,7 @@ void setVisited(Literal node) {
   (*visitedNodes)[toInt(node)] = true;
 }
 
-void createAnd(Literal output, Literals* cube) {
+void createAnd(Literal output, DynamicLiterals* cube) {
   AndGate* andGate = new AndGate();
   andGate->output = output;
   andGate->conj = cube;
@@ -103,7 +103,7 @@ void createBinaryAnd(Literal output, Literal left, Literal right) {
 }
 
 void registerLiteral(Literal lit);
-void createAndFromClause(Dark::Literals* disj, Literal output);
+void createAndFromClause(Dark::DynamicLiterals* disj, Literal output);
 void createAndFromClauses(ClauseList* disjunctions, Literal output);
 
 /**
@@ -146,9 +146,9 @@ void createAndFromClauses(ClauseList* disjunctions, Literal output) {
   else fprintf(stderr, "too many clauses, output truncated");
   fprintf(stderr, "\n");)
 
-  Literals* conj = new Literals();
+  DynamicLiterals* conj = new DynamicLiterals();
   for (ClauseList::iterator clit = disjunctions->begin(); clit != disjunctions->end(); clit++) {
-    Dark::Literals* clause = *clit;
+    Dark::DynamicLiterals* clause = *clit;
     if (clause->size() == 1) {
       registerLiteral(clause->getFirst());
       conj->add(clause->getFirst());
@@ -162,11 +162,11 @@ void createAndFromClauses(ClauseList* disjunctions, Literal output) {
   createAnd(output, conj);
 }
 
-void createAndFromClause(Dark::Literals* disj, Literal output) {
+void createAndFromClause(Dark::DynamicLiterals* disj, Literal output) {
   D2(fprintf(stderr, "output is %s%i. create aig from clause: %s\n", sign(output)?"-":"", var(output)+1, disj->toString()->c_str()));
 
-  Literals* conj = new Literals();
-  for (Dark::Literals::iterator clit = disj->begin(); clit != disj->end(); clit++) {
+  DynamicLiterals* conj = new DynamicLiterals();
+  for (Dark::DynamicLiterals::iterator clit = disj->begin(); clit != disj->end(); clit++) {
     Literal lit = *clit;
     registerLiteral(lit);
     conj->add(~lit);
@@ -188,7 +188,7 @@ void registerLiteral(Literal lit) {
   }
 }
 
-Literal convertNaryRecursive(Literals* conj) {
+Literal convertNaryRecursive(DynamicLiterals* conj) {
   if (conj->size() == 2) {
     Literal output = mkLit(newVar());
     createBinaryAnd(output, conj->getFirst(), conj->getLast());
@@ -202,10 +202,10 @@ Literal convertNaryRecursive(Literals* conj) {
     return output;
   } else {
     Literal output = mkLit(newVar());
-    Literals* lefts = conj->slice(0, conj->size() / 2);
+    DynamicLiterals* lefts = conj->slice(0, conj->size() / 2);
     Literal left = convertNaryRecursive(lefts);
     delete lefts;
-    Literals* rights = conj->slice(conj->size() / 2, conj->size());
+    DynamicLiterals* rights = conj->slice(conj->size() / 2, conj->size());
     Literal right = convertNaryRecursive(rights);
     delete rights;
     createBinaryAnd(output, left, right);
@@ -230,10 +230,10 @@ void convertNaryAndsToBinaryAnds() {
       createBinaryAnd(a->output, left, right);
     }
     else {
-      Literals* lefts = a->conj->slice(0, a->conj->size() / 2);
+      DynamicLiterals* lefts = a->conj->slice(0, a->conj->size() / 2);
       Literal left = convertNaryRecursive(lefts);
       delete lefts;
-      Literals* rights = a->conj->slice(a->conj->size() / 2, a->conj->size());
+      DynamicLiterals* rights = a->conj->slice(a->conj->size() / 2, a->conj->size());
       Literal right = convertNaryRecursive(rights);
       delete rights;
       createBinaryAnd(a->output, left, right);
@@ -268,7 +268,7 @@ void printLit(FILE* out, Literal lit) {
   if (lit == lit_True) {
     fprintf(out, "1");
   } else {
-    int num = 2+toInt(closeGaps(negOutAdaption(lit)));
+    int num = toInt(closeGaps(negOutAdaption(lit)));
     fprintf(out, "%i", num);
   }
 }

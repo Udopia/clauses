@@ -17,9 +17,9 @@
 #include "../filters/ClauseFilters.h"
 
 #include "../types/Literal.h"
-#include "../types/Literals.h"
 #include "../types/ClauseList.h"
 #include "../types/ClauseIndex.h"
+#include "../types/DynamicLiterals.h"
 
 #define VERBOSITY 0
 #include "../misc/debug.h"
@@ -80,10 +80,10 @@ void BlockedClauseDecomposition::decompose() {
  */
 void BlockedClauseDecomposition::postprocess() {
   // sort clauses in the small set according to the resolution connections in the large set
-  map<Literals*, int>* clauseScores = new map<Literals*, int>();
+  map<DynamicLiterals*, int>* clauseScores = new map<DynamicLiterals*, int>();
   for (ClauseList::iterator clause_it = small->begin(); clause_it != small->end(); clause_it++) {
     int score = 0;
-    for (Literals::iterator lit_it = (*clause_it)->begin(); lit_it != (*clause_it)->end(); lit_it++) {
+    for (DynamicLiterals::iterator lit_it = (*clause_it)->begin(); lit_it != (*clause_it)->end(); lit_it++) {
       score += index->countOccurence(~(*lit_it));
     }
     (*clauseScores)[*clause_it] = score;
@@ -126,7 +126,7 @@ void BlockedClauseDecomposition::shiftSmallByUnit() {
   large->addAll(small);
   delete small;
   small = new ClauseList();
-  Literals* unit = new Literals(mkLit(v, false));
+  DynamicLiterals* unit = new DynamicLiterals(mkLit(v, false));
   small->add(unit);
 }
 
@@ -161,7 +161,7 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseIndex* ind
     ClauseList* mirror = index->getClauses(~lit);
 
     for (ClauseList::iterator it = occurrence->begin(); it != occurrence->end(); it++) {
-      Literals* clause = *it;
+      DynamicLiterals* clause = *it;
 
       if (mirror->size() == 0 || mirror->isBlockedBy(lit, clause)) {
         // move blocking literal to the beginning of the list
@@ -172,7 +172,7 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseIndex* ind
         blockedClauses->add(clause);
         index->remove(clause);
         // push all literals to the stack
-        for (Literals::iterator iter = clause->begin(); iter != clause->end(); iter++) {
+        for (DynamicLiterals::iterator iter = clause->begin(); iter != clause->end(); iter++) {
           Literal l = *iter;
           if (notInStack[toInt(~l)]) {
             litsToCheck->push(~l);

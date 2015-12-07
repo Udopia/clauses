@@ -5,23 +5,23 @@
  *      Author: markus
  */
 
+#include "../types/DynamicLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Literals.h"
 
 class BinaryFilter: public ClauseFilter {
 
 public:
   BinaryFilter();
   virtual ~BinaryFilter();
-  virtual bool meetCriteria(Dark::Literals* clause);
+  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
 };
 
 BinaryFilter::BinaryFilter() { }
 
 BinaryFilter::~BinaryFilter() { }
 
-bool BinaryFilter::meetCriteria(Dark::Literals* clause) {
+bool BinaryFilter::meetCriteria(Dark::DynamicLiterals* clause) {
   return clause->size() == 2;
 }
 

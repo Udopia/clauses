@@ -5,36 +5,36 @@
  *      Author: markus
  */
 
+#include "../types/DynamicLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
-#include "../types/Literals.h"
 
 class CardinalityFilter: public ClauseFilter {
 
 private:
-  Dark::Literals* model;
+  Dark::DynamicLiterals* model;
   int length;
 
 public:
-  CardinalityFilter(Dark::Literals* model, int length);
+  CardinalityFilter(Dark::DynamicLiterals* model, int length);
   virtual ~CardinalityFilter();
-  virtual bool meetCriteria(Dark::Literals* clause);
+  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
 };
 
-CardinalityFilter::CardinalityFilter(Dark::Literals* model, int length) {
+CardinalityFilter::CardinalityFilter(Dark::DynamicLiterals* model, int length) {
   this->model = model;
   this->length = length;
 }
 
 CardinalityFilter::~CardinalityFilter() { }
 
-bool CardinalityFilter::meetCriteria(Dark::Literals* clause) {
+bool CardinalityFilter::meetCriteria(Dark::DynamicLiterals* clause) {
   return model->cardinality(clause) < length;
 }
 
 /**
  * Implementation for IClauseFilters method
  */
-std::unique_ptr<ClauseFilter> createCardinalityFilter(Dark::Literals* model, int length) {
+std::unique_ptr<ClauseFilter> createCardinalityFilter(Dark::DynamicLiterals* model, int length) {
   return std::unique_ptr<ClauseFilter>(new CardinalityFilter(model, length));
 }
