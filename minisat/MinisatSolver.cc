@@ -27,14 +27,14 @@ MinisatSolver::~MinisatSolver() {
   delete solver;
 }
 
-void MinisatSolver::toTmpVec(DynamicLiterals* lits) {
+void MinisatSolver::toTmpVec(PooledLiterals* lits) {
   tmpVec.clear();
   for (Literal lit : *lits) {
     tmpVec.push(Minisat::mkLit(var(lit)-1, sign(lit)));
   }
 }
 
-bool MinisatSolver::isUPConsistent(DynamicLiterals* cube) {
+bool MinisatSolver::isUPConsistent(PooledLiterals* cube) {
   toTmpVec(cube);
   Minisat::vec<Minisat::Lit> tmp_out;
   return solver->implies(tmpVec, tmp_out);

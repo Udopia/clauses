@@ -5,7 +5,7 @@
  *      Author: markus
  */
 
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
 
@@ -14,14 +14,14 @@ class ConstantTrueFilter: public ClauseFilter {
 public:
   ConstantTrueFilter();
   virtual ~ConstantTrueFilter();
-  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
+  virtual bool meetCriteria(Dark::PooledLiterals* clause);
 };
 
 ConstantTrueFilter::ConstantTrueFilter() { }
 
 ConstantTrueFilter::~ConstantTrueFilter() { }
 
-bool ConstantTrueFilter::meetCriteria(Dark::DynamicLiterals* clause) {
+bool ConstantTrueFilter::meetCriteria(Dark::PooledLiterals* clause) {
   return clause == clause;
 }
 

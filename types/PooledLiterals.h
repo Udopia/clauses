@@ -22,9 +22,6 @@ class LiteralPool;
 class PooledLiterals {
 
 private:
-  typedef Literal* iterator;
-  typedef const Literal* const_iterator;
-
   bool mark;
 
   int max_var;
@@ -34,6 +31,9 @@ private:
   Literal watcher[3] = { litFalse, litFalse, litFalse };
 
 public:
+  typedef Literal* iterator;
+  typedef const Literal* const_iterator;
+
   static LiteralPool* pool;
 
   PooledLiterals();

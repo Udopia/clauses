@@ -5,7 +5,7 @@
  *      Author: markus
  */
 
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
 #include "../types/Literal.h"
@@ -15,16 +15,16 @@ class HornFilter: public ClauseFilter {
 public:
   HornFilter();
   virtual ~HornFilter();
-  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
+  virtual bool meetCriteria(Dark::PooledLiterals* clause);
 };
 
 HornFilter::HornFilter() { }
 
 HornFilter::~HornFilter() { }
 
-bool HornFilter::meetCriteria(Dark::DynamicLiterals* clause) {
+bool HornFilter::meetCriteria(Dark::PooledLiterals* clause) {
   int count = 0;
-  for (Dark::DynamicLiterals::iterator lit = clause->begin(); lit != clause->end(); lit++) {
+  for (Dark::PooledLiterals::iterator lit = clause->begin(); *lit != litFalse; lit++) {
     if (!sign(*lit)) {
       count++;
       if (count > 1) {

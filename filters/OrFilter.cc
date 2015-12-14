@@ -5,7 +5,7 @@
  *      Author: markus
  */
 
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
 
@@ -17,7 +17,7 @@ private:
 public:
   OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right);
   virtual ~OrFilter();
-  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
+  virtual bool meetCriteria(Dark::PooledLiterals* clause);
 };
 
 OrFilter::OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right) {
@@ -27,7 +27,7 @@ OrFilter::OrFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFil
 
 OrFilter::~OrFilter() { }
 
-bool OrFilter::meetCriteria(Dark::DynamicLiterals* clause) {
+bool OrFilter::meetCriteria(Dark::PooledLiterals* clause) {
   return left->meetCriteria(clause) || right->meetCriteria(clause);
 }
 

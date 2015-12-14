@@ -23,8 +23,8 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
 
   this->inputs = new vector<Literal>();
   for (ClauseList::iterator it = forward->begin(); it != forward->end(); it++) {
-    Dark::DynamicLiterals* clause = *it;
-    for (std::vector<Literal>::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
+    Dark::PooledLiterals* clause = *it;
+    for (PooledLiterals::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
       if (*lit != ~output) {
         inputs->push_back(*lit);
       }
@@ -42,9 +42,9 @@ Literal Gate::getOutput() {
   return output;
 }
 
-void Gate::addForwardClause(DynamicLiterals* fwd) {
+void Gate::addForwardClause(PooledLiterals* fwd) {
   forward->add(fwd);
-  for (std::vector<Literal>::iterator lit = fwd->begin(); lit != fwd->end(); ++lit) {
+  for (PooledLiterals::iterator lit = fwd->begin(); *lit != litFalse; ++lit) {
     if (*lit != ~output) {
       inputs->push_back(*lit);
     }
@@ -64,8 +64,8 @@ vector<Literal>* Gate::getInputs() {
 }
 
 bool Gate::isMonotonous() {
-  for (vector<Literal>::iterator inp1 = inputs->begin(); inp1 != inputs->end(); inp1++) {
-    for (vector<Literal>::iterator inp2 = inp1 + 1; inp2 != inputs->end(); inp2++) {
+  for (std::vector<Literal>::iterator inp1 = inputs->begin(); inp1 != inputs->end(); inp1++) {
+    for (std::vector<Literal>::iterator inp2 = inp1 + 1; inp2 != inputs->end(); inp2++) {
       if (*inp1 == ~*inp2) return false;
     }
   }
@@ -73,7 +73,7 @@ bool Gate::isMonotonous() {
 }
 
 bool Gate::isMonotonousIn(Literal literal) {
-  for (vector<Literal>::iterator inp = inputs->begin(); inp != inputs->end(); inp++) {
+  for (std::vector<Literal>::iterator inp = inputs->begin(); inp != inputs->end(); inp++) {
     if (*inp == ~literal) return false;
   }
   return true;

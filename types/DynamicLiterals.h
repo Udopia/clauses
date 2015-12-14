@@ -92,11 +92,6 @@ public:
   void clear();
   bool isConsistentWith(DynamicLiterals* cube);
 
-  int cardinality(DynamicLiterals* clause);
-  bool satisfies(DynamicLiterals* clause);
-  bool falsifies(DynamicLiterals* clause);
-
-  ClauseList* checkSatisfied(ClauseList* list);
   DynamicLiterals* clone();
 };
 

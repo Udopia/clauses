@@ -103,7 +103,7 @@ void createBinaryAnd(Literal output, Literal left, Literal right) {
 }
 
 void registerLiteral(Literal lit);
-void createAndFromClause(Dark::DynamicLiterals* disj, Literal output);
+void createAndFromClause(Dark::PooledLiterals* disj, Literal output);
 void createAndFromClauses(ClauseList* disjunctions, Literal output);
 
 /**
@@ -148,10 +148,10 @@ void createAndFromClauses(ClauseList* disjunctions, Literal output) {
 
   DynamicLiterals* conj = new DynamicLiterals();
   for (ClauseList::iterator clit = disjunctions->begin(); clit != disjunctions->end(); clit++) {
-    Dark::DynamicLiterals* clause = *clit;
+    Dark::PooledLiterals* clause = *clit;
     if (clause->size() == 1) {
-      registerLiteral(clause->getFirst());
-      conj->add(clause->getFirst());
+      registerLiteral(*(clause->begin()));
+      conj->add(*(clause->begin()));
     } else {
       Literal out = mkLit(newVar());
       createAndFromClause(clause, out);
@@ -162,11 +162,11 @@ void createAndFromClauses(ClauseList* disjunctions, Literal output) {
   createAnd(output, conj);
 }
 
-void createAndFromClause(Dark::DynamicLiterals* disj, Literal output) {
+void createAndFromClause(Dark::PooledLiterals* disj, Literal output) {
   D2(fprintf(stderr, "output is %s%i. create aig from clause: %s\n", sign(output)?"-":"", var(output)+1, disj->toString()->c_str()));
 
   DynamicLiterals* conj = new DynamicLiterals();
-  for (Dark::DynamicLiterals::iterator clit = disj->begin(); clit != disj->end(); clit++) {
+  for (Dark::PooledLiterals::iterator clit = disj->begin(); *clit != litFalse; clit++) {
     Literal lit = *clit;
     registerLiteral(lit);
     conj->add(~lit);

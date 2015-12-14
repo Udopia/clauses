@@ -49,7 +49,7 @@ void graphviz_create_child_nodes(GateAnalyzer* analyzer, Literal parent) {
 
     for (ClauseList::iterator clause = fwd->begin(); clause != fwd->end(); clause++) {
       if ((*clause)->size() < 3) {
-        Literal literal = (*clause)->getFirst() == ~parent ? (*clause)->getLast() : (*clause)->getFirst();
+        Literal literal = *((*clause)->begin()) == ~parent ? *((*clause)->end()-1) : *((*clause)->begin());
         int childNodeId = 2*var(literal)+(sign(literal)?1:0);
 
         if (!isVisited(literal)) {
@@ -69,7 +69,7 @@ void graphviz_create_child_nodes(GateAnalyzer* analyzer, Literal parent) {
         fprintf(stdout, "  N%i [label=\"\" shape=point]\n", clauseNodeId);
         fprintf(stdout, "  N%i->N%i\n", parentNodeId, clauseNodeId);
 
-        for (DynamicLiterals::iterator it2 = (*clause)->begin(); it2 != (*clause)->end(); it2++) {
+        for (PooledLiterals::iterator it2 = (*clause)->begin(); *it2 != litFalse; it2++) {
           Literal literal = *it2;
           int childNodeId = 2*var(literal)+(sign(literal)?1:0);
 

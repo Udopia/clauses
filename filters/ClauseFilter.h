@@ -9,13 +9,13 @@
 #define IFILTER_H_
 
 namespace Dark {
-class DynamicLiterals;
+class PooledLiterals;
 }
 
 class ClauseFilter {
 public:
   virtual ~ClauseFilter() { };
-  virtual bool meetCriteria(Dark::DynamicLiterals* clause) = 0;
+  virtual bool meetCriteria(Dark::PooledLiterals* clause) = 0;
 };
 
 #endif /* IFILTER_H_ */

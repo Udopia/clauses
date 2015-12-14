@@ -19,8 +19,9 @@ PooledLiterals::PooledLiterals() {
   mark = false;
   watcher[0] = litFalse;
   watcher[1] = litFalse;
-  literals = NULL;
+  literals = pool->alloc(watcher);
 }
+
 PooledLiterals::PooledLiterals(int count) {
   max_var = 0;
   nlits = count;
@@ -29,22 +30,25 @@ PooledLiterals::PooledLiterals(int count) {
   watcher[1] = litFalse;
   literals = pool->alloc(count);
 }
+
 PooledLiterals::PooledLiterals(Literal lit) {
   max_var = var(lit);
   nlits = 1;
   mark = false;
   watcher[0] = lit;
   watcher[1] = litFalse;
-  literals = NULL;
+  literals = pool->alloc(watcher);
 }
+
 PooledLiterals::PooledLiterals(Literal lit1, Literal lit2) {
   max_var = std::max(var(lit1), var(lit2));
   nlits = 2;
   mark = false;
   watcher[0] = lit1;
   watcher[1] = lit2;
-  literals = NULL;
+  literals = pool->alloc(watcher);
 }
+
 // lits->size > 1
 PooledLiterals::PooledLiterals(Literal lits[]) {
   max_var = 0;
@@ -66,24 +70,26 @@ int PooledLiterals::maxVar() {
 }
 
 PooledLiterals::iterator PooledLiterals::begin() {
-  return literals != NULL ? pool->resolve(literals) : watcher;
+  return pool->resolve(literals);
 }
 
 PooledLiterals::iterator PooledLiterals::end() {
-  return literals != NULL ? pool->resolve((Literal*)(literals + nlits)) : watcher + nlits;
+  return pool->resolve((Literal*)(literals + nlits));
 }
 
 void PooledLiterals::add(Literal lit) {
   *end() = lit;
-  Literal* lits = pool->alloc(literals);
+  Literal* lits = pool->alloc(pool->resolve(literals));
   pool->free(literals);
+  if (watcher[0] == litFalse) watcher[0] = lit;
+  else if (watcher[1] == litFalse) watcher[1] = lit;
   literals = lits;
 }
 
 void PooledLiterals::addAll(PooledLiterals* clause) {
   Literal* lits = pool->alloc(nlits + clause->nlits);
-  memcpy(lits, begin(), nlits);
-  memcpy(lits + nlits, clause->begin(), clause->nlits);
+  memcpy(pool->resolve(lits), begin(), nlits);
+  memcpy(pool->resolve(lits) + nlits, clause->begin(), clause->nlits);
   pool->free(literals);
   literals = lits;
 }

@@ -5,7 +5,7 @@
  *      Author: markus
  */
 
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
 
@@ -17,7 +17,7 @@ private:
 public:
   AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right);
   virtual ~AndFilter();
-  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
+  virtual bool meetCriteria(Dark::PooledLiterals* clause);
 };
 
 AndFilter::AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseFilter> right) {
@@ -27,7 +27,7 @@ AndFilter::AndFilter(std::unique_ptr<ClauseFilter> left, std::unique_ptr<ClauseF
 
 AndFilter::~AndFilter() { }
 
-bool AndFilter::meetCriteria(Dark::DynamicLiterals* clause) {
+bool AndFilter::meetCriteria(Dark::PooledLiterals* clause) {
   return left->meetCriteria(clause) && right->meetCriteria(clause);
 }
 

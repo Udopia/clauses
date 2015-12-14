@@ -18,7 +18,7 @@
 
 namespace Dark {
 
-class DynamicLiterals;
+class PooledLiterals;
 class ClauseList;
 
 class ClauseIndex {
@@ -34,12 +34,12 @@ public:
   ClauseIndex(ClauseList* clauses);
   virtual ~ClauseIndex();
 
-  void add(DynamicLiterals* clause);
+  void add(PooledLiterals* clause);
   void addAll(ClauseList* clause);
-  void remove(DynamicLiterals* clause);
+  void remove(PooledLiterals* clause);
   void removeAll(ClauseList* clause);
 
-  void augment(DynamicLiterals* clause, Literal lit);
+  void augment(PooledLiterals* clause, Literal lit);
   void augment(ClauseList* clauses, Literal lit);
 
   ClauseList* getClauses(Literal literal);

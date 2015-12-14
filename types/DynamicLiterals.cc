@@ -282,43 +282,4 @@ bool DynamicLiterals::isConsistentWith(DynamicLiterals* lits) {
   return true;
 }
 
-int DynamicLiterals::cardinality(DynamicLiterals* lits) {
-  int count = 0;
-  for (unsigned int j = 0; j < lits->size(); j++) {
-    if (this->contains(lits->get(j))) {
-      count++;
-    }
-  }
-  return count;
-}
-
-bool DynamicLiterals::satisfies(DynamicLiterals* lits) {
-  for (unsigned int j = 0; j < lits->size(); j++) {
-    if (this->contains(lits->get(j))) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool DynamicLiterals::falsifies(DynamicLiterals* lits) {
-  for (unsigned int j = 0; j < lits->size(); j++) {
-    if (!this->contains(~(lits->get(j)))) {
-      return false;
-    }
-  }
-  return true;
-}
-
-ClauseList* DynamicLiterals::checkSatisfied(ClauseList* list) {
-  ClauseList* notSatisfied = new ClauseList();
-  for (unsigned int i = 0; i < list->size(); i++) {
-    DynamicLiterals* lits = list->get(i);
-    if (!this->satisfies(lits)) {
-      notSatisfied->add(lits);
-    }
-  }
-  return notSatisfied;
-}
-
 }

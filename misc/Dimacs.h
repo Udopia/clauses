@@ -26,7 +26,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ParseUtils.h"
 #include "../types/Literal.h"
 #include "../types/ClauseList.h"
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 
 //=================================================================================================
 // DIMACS Parser:
@@ -47,30 +47,33 @@ public:
     return clauses;
   }
 
-  int getDeclNVars() { return declVars; }
-  int getDeclNClauses() { return declClauses; }
-  int getRealNVars() { return trueVars; }
-  int getRealNClauses() { return trueClauses; }
+  unsigned int getDeclNVars() { return declVars; }
+  unsigned int getDeclNClauses() { return declClauses; }
+  unsigned int getRealNVars() { return trueVars; }
+  unsigned int getRealNClauses() { return trueClauses; }
 
 private:
-  int declVars;
-  int declClauses;
-  int trueVars;
-  int trueClauses;
+  unsigned int declVars;
+  unsigned int declClauses;
+  unsigned int trueVars;
+  unsigned int trueClauses;
+  Literal* buffer;
 
   Dark::ClauseList* clauses;
 
   template<class B>
-  Dark::DynamicLiterals* readClause(B& in) {
-    Dark::DynamicLiterals* clause = new Dark::DynamicLiterals();
+  Dark::PooledLiterals* readClause(B& in) {
+    Literal* lit = buffer;
     int parsed_lit = parseInt(in);
     while (parsed_lit != 0) {
       int var = abs(parsed_lit);
       while (var >= trueVars) trueVars++;
-      clause->add(mkLit(var, parsed_lit < 0));
+      *lit = mkLit(var, parsed_lit < 0);
+      lit++;
       parsed_lit = parseInt(in);
     }
-    return clause;
+    *lit = litFalse;
+    return new Dark::PooledLiterals(buffer);
   }
 
   template<class B>
@@ -81,6 +84,7 @@ private:
         if (eagerMatch(in, "p cnf")){
           declVars    = parseInt(in);
           declClauses = parseInt(in);
+          buffer = (Literal*)calloc(declVars+1, sizeof(Literal));
         } else {
           printf("PARSE ERROR! Unexpected char: %c\n", *in), exit(3);
         }

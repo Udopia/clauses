@@ -5,7 +5,7 @@
  *      Author: markus
  */
 
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
 
@@ -14,7 +14,7 @@ class MarkFilter: public ClauseFilter {
 public:
   MarkFilter();
   virtual ~MarkFilter();
-  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
+  virtual bool meetCriteria(Dark::PooledLiterals* clause);
   virtual void print();
 };
 
@@ -22,7 +22,7 @@ MarkFilter::MarkFilter() { }
 
 MarkFilter::~MarkFilter() { }
 
-bool MarkFilter::meetCriteria(Dark::DynamicLiterals* clause) {
+bool MarkFilter::meetCriteria(Dark::PooledLiterals* clause) {
   return clause->isMarked();
 }
 

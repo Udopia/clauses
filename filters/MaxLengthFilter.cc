@@ -5,7 +5,7 @@
  *      Author: markus
  */
 
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
 
@@ -16,7 +16,7 @@ private:
 public:
   MaxLengthFilter(unsigned int length);
   virtual ~MaxLengthFilter();
-  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
+  virtual bool meetCriteria(Dark::PooledLiterals* clause);
 };
 
 MaxLengthFilter::MaxLengthFilter(unsigned int length) {
@@ -25,7 +25,7 @@ MaxLengthFilter::MaxLengthFilter(unsigned int length) {
 
 MaxLengthFilter::~MaxLengthFilter() { }
 
-bool MaxLengthFilter::meetCriteria(Dark::DynamicLiterals* clause) {
+bool MaxLengthFilter::meetCriteria(Dark::PooledLiterals* clause) {
   return clause->size() <= length;
 }
 

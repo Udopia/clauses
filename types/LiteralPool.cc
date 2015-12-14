@@ -28,11 +28,11 @@ Literal LiteralPool::get(int i) {
   return pool[i];
 }
 
-Literal* LiteralPool::resolve(Literal* offset) {
+Literal* LiteralPool::resolve(Offset offset) {
   return (Literal*)(pool + (unsigned int)offset);
 }
 
-Literal* LiteralPool::alloc(unsigned int count) {
+LiteralPool::Offset LiteralPool::alloc(unsigned int count) {
   size_t offset = cursor - pool;
   if (offset + count + 2 >= size) {
     grow();
@@ -43,44 +43,44 @@ Literal* LiteralPool::alloc(unsigned int count) {
   return (Literal*)offset;
 }
 
-Literal* LiteralPool::alloc(Literal literals[], unsigned int count) {
+LiteralPool::Offset LiteralPool::alloc(Literal literals[], unsigned int count) {
   size_t offset = cursor - pool; // store offset
   if (offset + count + 2 >= size) { // grow to size
+    Literal* buffer = malloc(count * sizeof(Literal));
+    memcpy(buffer, literals, count * sizeof(Literal)); // save in buffer due to memory reallocation in grow()
     grow();
+    memcpy(cursor, buffer, count * sizeof(Literal)); // copy literals
+    delete buffer;
+  } else {
+    memcpy(cursor, literals, count * sizeof(Literal)); // copy literals
   }
-  memcpy(cursor, literals, count * sizeof(Literal)); // copy literals
   cursor += count;
   *(cursor++) = litFalse;
   *(cursor++) = litFalse;
   return (Literal*)offset; // return offset
 }
 
-Literal* LiteralPool::alloc(Literal literals[]) {
+LiteralPool::Offset LiteralPool::alloc(Literal literals[]) {
   unsigned int count = 0;
   while (literals[count] != litFalse) { // determine count in zero terminated array
     count++;
   }
-  size_t offset = cursor - pool;
-  if (offset + count + 2 >= size) {
-    grow();
-  }
-  memcpy(cursor, literals, count * sizeof(Literal));
-  cursor += count;
-  *(cursor++) = litFalse;
-  *(cursor++) = litFalse;
-  return (Literal*)offset;
+  return this->alloc(literals, count);
 }
 
-void LiteralPool::free(Literal* ref) {
-  while (*ref != litFalse) {
-    *ref = litFalse;
-    ref++;
+void LiteralPool::free(LiteralPool::Offset ref) {
+  Literal* p = resolve(ref);
+  while (*p != litFalse) {
+    *p = litFalse;
+    p++;
   }
 }
 
 void LiteralPool::grow() {
   size *= 2;
+  size_t offset = cursor - pool; // store offset
   pool = (Literal*)realloc(pool, size * sizeof(Literal));
+  cursor = pool + offset; // restore cursor
 }
 
 } /* namespace Dark */

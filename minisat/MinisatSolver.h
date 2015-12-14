@@ -14,20 +14,20 @@
 
 namespace Dark {
   class ClauseList;
-  class DynamicLiterals;
+  class PooledLiterals;
 
   class MinisatSolver {
   private:
     Minisat::Solver* solver;
     Minisat::vec<Minisat::Lit> tmpVec;
 
-    void toTmpVec(DynamicLiterals* lits);
+    void toTmpVec(PooledLiterals* lits);
 
   public:
     MinisatSolver(ClauseList* list);
     virtual ~MinisatSolver();
 
-    bool isUPConsistent(DynamicLiterals* cube);
+    bool isUPConsistent(PooledLiterals* cube);
   };
 }
 #endif /* CLAUSES_TOOLS_MINISATSOLVER_H_ */

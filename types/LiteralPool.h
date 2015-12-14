@@ -22,19 +22,21 @@ private:
   void grow();
 
 public:
+  typedef Literal* Offset;
+
   unsigned int initialSize = 100000;
 
   LiteralPool();
   virtual ~LiteralPool();
 
   Literal get(int i);
-  Literal* resolve(Literal*);
+  Literal* resolve(Offset);
 
-  Literal* alloc(unsigned int count);
-  Literal* alloc(Literal literals[], unsigned int count);
-  Literal* alloc(Literal literals[]);
+  Offset alloc(unsigned int count);
+  Offset alloc(Literal literals[], unsigned int count);
+  Offset alloc(Literal literals[]);
 
-  void free(Literal* reference);
+  void free(Offset reference);
 };
 
 } /* namespace Dark */

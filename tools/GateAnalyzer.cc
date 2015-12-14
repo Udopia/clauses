@@ -24,7 +24,7 @@
 
 #include <assert.h>
 
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 #include "../types/FixedSizeLiterals.h"
 
 #define VERBOSITY 0
@@ -44,7 +44,7 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList) {
 
   // introduce new variable and unit-clause
   root = mkLit(clauses->newVar(), false);
-  DynamicLiterals* rootClause = new DynamicLiterals(root);
+  PooledLiterals* rootClause = new PooledLiterals(root);
   rootClause->setMarked();
 
   // create some data-structures for each variable
@@ -202,17 +202,17 @@ ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
   return index->getClauses(min);
 }
 
-DynamicLiterals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
+PooledLiterals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
   switch (method) {
   case FIRST_CLAUSE: {
     return list->getFirst();
   }
   case MAX_ID: {
     Literal maxLit = mkLit(0, false);
-    DynamicLiterals* result = NULL;
+    PooledLiterals* result = NULL;
     for (ClauseList::iterator clause = list->begin(); clause != list->end();
         clause++) {
-      for (DynamicLiterals::iterator clit = (*clause)->begin();
+      for (PooledLiterals::iterator clit = (*clause)->begin();
           clit != (*clause)->end(); clit++) {
         if (var(*clit) > var(maxLit)) {
           maxLit = *clit;
@@ -243,16 +243,16 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
   for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    DynamicLiterals* next = getNextClause(remainder, selection);
+    PooledLiterals* next = getNextClause(remainder, selection);
 
     next->setMarked();
     getOrCreateGate(root)->addForwardClause(next);
-    for (DynamicLiterals::iterator it = next->begin(); it != next->end(); it++) {
+    for (PooledLiterals::iterator it = next->begin(); it != next->end(); it++) {
       setParent(root, *it);
     }
     index->augment(next, ~root);
 
-    for (DynamicLiterals::iterator it = next->begin(); it != next->end(); it++) {
+    for (PooledLiterals::iterator it = next->begin(); it != next->end(); it++) {
       if (*it != ~root)
         analyzeEncoding(*it, equivalence);
     }
@@ -260,11 +260,11 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
   }
 
   for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
-    DynamicLiterals* next = *it;
+    PooledLiterals* next = *it;
     next->setMarked();
     index->augment(next, ~root);
     getOrCreateGate(root)->addForwardClause(next);
-    for (DynamicLiterals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
+    for (PooledLiterals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
       setParent(root, *it2);
     }
   }
@@ -346,23 +346,23 @@ bool GateAnalyzer::isFullEncoding(Literal output, ClauseList* fwd,
 
 bool GateAnalyzer::semanticCheck(Literal output, ClauseList* fwd) {
   int i = 0;
-  vector<DynamicLiterals*> cubes(fwd->size() + 1);
-  cubes[0] = new DynamicLiterals(~output);
-  for (DynamicLiterals* clause : *fwd) {
+  vector<PooledLiterals*> cubes(fwd->size() + 1);
+  cubes[0] = new PooledLiterals(~output);
+  for (PooledLiterals* clause : *fwd) {
     cubes[++i] = clause->allBut(~output);
   }
 
   i = 0;
   vector<int> positions(cubes.size(), 0);
   vector<int> maxima(cubes.size());
-  for (DynamicLiterals* cube : cubes) {
+  for (PooledLiterals* cube : cubes) {
     maxima[i++] = cube->size();
   }
 
-  DynamicLiterals* assumptions = new DynamicLiterals();
+  PooledLiterals* assumptions = new PooledLiterals();
   do {
     i = 0;
-    for (DynamicLiterals* cube : cubes) {
+    for (PooledLiterals* cube : cubes) {
       assumptions->add(cube->get(positions[i++]));
     }
     if (getMinisatSolver()->isUPConsistent(assumptions)) {

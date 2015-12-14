@@ -13,6 +13,7 @@
 #include <map>
 #include "Literal.h"
 #include "../filters/ClauseFilter.h"
+#include "PooledLiterals.h"
 #include "DynamicLiterals.h"
 
 using namespace std;
@@ -21,7 +22,7 @@ namespace Dark {
 
 class ClauseList {
 private:
-  typedef std::vector<DynamicLiterals*> InternalClauseList;
+  typedef std::vector<PooledLiterals*> InternalClauseList;
 
 protected:
   InternalClauseList* clauses;
@@ -32,22 +33,22 @@ public:
 
   ClauseList();
   ClauseList(ClauseList* clauses);
-  ClauseList(std::vector<DynamicLiterals*>* clauses);
+  ClauseList(std::vector<PooledLiterals*>* clauses);
   virtual ~ClauseList();
 
   void freeClauses();
 
-  virtual void add(DynamicLiterals* clause);
-  virtual void remove(DynamicLiterals* clause);
+  void add(PooledLiterals* clause);
+  void remove(PooledLiterals* clause);
 
   void addAll(ClauseList* list);
   void removeAll(ClauseList* list);
 
   ClauseList* slice(unsigned int from, unsigned int to);
 
-  DynamicLiterals* get(int i);
-  DynamicLiterals* getFirst();
-  DynamicLiterals* getLast();
+  PooledLiterals* get(int i);
+  PooledLiterals* getFirst();
+  PooledLiterals* getLast();
   unsigned int size();
 
   int maxVar() { return max_var; }
@@ -61,7 +62,7 @@ public:
   int countUsedVariables() {
     vector<bool> used(max_var+1, false);
     for (iterator it = begin(); it != end(); it++) {
-      for (DynamicLiterals::iterator lit = (*it)->begin(); lit != (*it)->end(); lit++) {
+      for (PooledLiterals::iterator lit = (*it)->begin(); lit != (*it)->end(); lit++) {
         used[var(*lit)] = true;
       }
     }
@@ -75,13 +76,13 @@ public:
   iterator begin();
   iterator end();
 
-  void sort(map<DynamicLiterals*, int>* clauseScore);
+  void sort(map<PooledLiterals*, int>* clauseScore);
 
-  int pos(DynamicLiterals* clause);
-  DynamicLiterals* find(DynamicLiterals* clause);
-  bool contains(DynamicLiterals* clause);
+  int pos(PooledLiterals* clause);
+  PooledLiterals* find(PooledLiterals* clause);
+  bool contains(PooledLiterals* clause);
 
-  bool isBlockedBy(Literal lit, DynamicLiterals* clause);
+  bool isBlockedBy(Literal lit, PooledLiterals* clause);
   bool isBlockedBy(Literal lit, ClauseList* list);
 
   bool matchesFullGatePattern(Literal lit, ClauseList* list);

@@ -5,7 +5,7 @@
  *      Author: markus
  */
 
-#include "../types/DynamicLiterals.h"
+#include "../types/PooledLiterals.h"
 #include "ClauseFilter.h"
 #include "ClauseFilters.h"
 
@@ -14,14 +14,14 @@ class TernaryFilter: public ClauseFilter {
 public:
   TernaryFilter();
   virtual ~TernaryFilter();
-  virtual bool meetCriteria(Dark::DynamicLiterals* clause);
+  virtual bool meetCriteria(Dark::PooledLiterals* clause);
 };
 
 TernaryFilter::TernaryFilter() { }
 
 TernaryFilter::~TernaryFilter() { }
 
-bool TernaryFilter::meetCriteria(Dark::DynamicLiterals* clause) {
+bool TernaryFilter::meetCriteria(Dark::PooledLiterals* clause) {
   return clause->size() == 3;
 }
 
