@@ -22,9 +22,8 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
   //printf("\n");
 
   this->inputs = new vector<Literal>();
-  for (ClauseList::iterator it = forward->begin(); it != forward->end(); it++) {
-    Dark::PooledLiterals* clause = *it;
-    for (PooledLiterals::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
+  for (ClauseList::iterator clause = forward->begin(); clause != forward->end(); clause++) {
+    for (PooledLiterals::iterator lit = (*clause)->begin(); lit != (*clause)->end(); ++lit) {
       if (*lit != ~output) {
         inputs->push_back(*lit);
       }

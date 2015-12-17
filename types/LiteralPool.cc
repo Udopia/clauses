@@ -29,22 +29,22 @@ Literal LiteralPool::get(int i) {
 }
 
 Literal* LiteralPool::resolve(Offset offset) {
-  return (Literal*)(pool + (unsigned int)offset);
+  return (Literal*)(pool + offset);
 }
 
 LiteralPool::Offset LiteralPool::alloc(unsigned int count) {
-  size_t offset = cursor - pool;
+  Offset offset = cursor - pool;
   if (offset + count + 2 >= size) {
     grow();
   }
   cursor += count;
   *(cursor++) = litFalse;
   *(cursor++) = litFalse;
-  return (Literal*)offset;
+  return offset;
 }
 
 LiteralPool::Offset LiteralPool::alloc(Literal literals[], unsigned int count) {
-  size_t offset = cursor - pool; // store offset
+  Offset offset = cursor - pool; // store offset
   if (offset + count + 2 >= size) { // grow to size
     Literal* buffer = malloc(count * sizeof(Literal));
     memcpy(buffer, literals, count * sizeof(Literal)); // save in buffer due to memory reallocation in grow()
@@ -57,7 +57,7 @@ LiteralPool::Offset LiteralPool::alloc(Literal literals[], unsigned int count) {
   cursor += count;
   *(cursor++) = litFalse;
   *(cursor++) = litFalse;
-  return (Literal*)offset; // return offset
+  return offset; // return offset
 }
 
 LiteralPool::Offset LiteralPool::alloc(Literal literals[]) {
@@ -78,7 +78,7 @@ void LiteralPool::free(LiteralPool::Offset ref) {
 
 void LiteralPool::grow() {
   size *= 2;
-  size_t offset = cursor - pool; // store offset
+  Offset offset = cursor - pool; // store offset
   pool = (Literal*)realloc(pool, size * sizeof(Literal));
   cursor = pool + offset; // restore cursor
 }

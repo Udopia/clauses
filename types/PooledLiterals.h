@@ -14,10 +14,9 @@
 #include <cstdio>
 
 #include "Literal.h"
+#include "LiteralPool.h"
 
 namespace Dark {
-
-class LiteralPool;
 
 class PooledLiterals {
 
@@ -26,7 +25,7 @@ private:
 
   int max_var;
   int nlits;
-  Literal* literals = NULL;
+  LiteralPool::Offset literals = 0;
 
   Literal watcher[3] = { litFalse, litFalse, litFalse };
 

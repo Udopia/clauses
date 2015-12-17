@@ -145,7 +145,7 @@ bool GateAnalyzer::hasParents(Literal child) {
 }
 
 void GateAnalyzer::setParent(Literal parent, Literal child) {
-  D2(fprintf(stderr, "Adding Parent-child-relationship: %s%i -> %s%i\n", sign(parent)?"-":"", var(parent)+1, sign(child)?"-":"", var(child)+1);)
+  D2(fprintf(stderr, "Adding Parent-child-relationship: %s%i -> %s%i\n", sign(parent)?"-":"", var(parent), sign(child)?"-":"", var(child));)
   if (std::find((*parents)[child]->begin(), (*parents)[child]->end(), parent) == (*parents)[child]->end()) {
     (*parents)[child]->push_back(parent);
   }
@@ -276,7 +276,7 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
  * Create a DAG starting from a fact. Detect cycles and stop if necessary
  ***/
 void GateAnalyzer::analyzeEncoding(Literal root, EquivalenceDetectionMethod equivalence) {
-  D1(fprintf(stderr, "Root is %s%i\n", sign(root) ? "-" : "", var(root)+1);)
+  D1(fprintf(stderr, "Root is %s%i\n", sign(root) ? "-" : "", var(root));)
 
   // a queue of literals that grows while checking for implicates
   vector<Literal>* literals = new vector<Literal>();
@@ -297,18 +297,18 @@ void GateAnalyzer::analyzeEncoding(Literal root, EquivalenceDetectionMethod equi
     ClauseList* bwd = index->getClauses(output)->getByCriteria(createNoMarkFilter());
 
     D1(
-        fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);
-        fwd->print(stderr);
-        bwd->print(stderr);
-        fprintf(stderr, "\n");
+        fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output));
+        //fwd->print(stderr);
+        //bwd->print(stderr);
+        //fprintf(stderr, "\n");
     )
 
     if (fwd->size() > 0 && bwd->isBlockedBy(output, fwd)) {
       if (isMonotonousInput(var(output))) {
-        D1(fprintf(stderr, "Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
+        D1(fprintf(stderr, "Monotonous Parents %s%i\n", sign(output)?"-":"", var(output));)
         gate = defGate(output, fwd, bwd);
       } else if (isFullEncoding(output, fwd, bwd, equivalence)){ // non-monotonous
-        D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
+        D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output));)
         gate = defGate(output, fwd, bwd);
         gate->setHasNonMonotonousParent();
       }
