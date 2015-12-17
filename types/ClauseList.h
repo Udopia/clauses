@@ -62,7 +62,7 @@ public:
   int countUsedVariables() {
     vector<bool> used(max_var+1, false);
     for (iterator it = begin(); it != end(); it++) {
-      for (PooledLiterals::iterator lit = (*it)->begin(); lit != (*it)->end(); lit++) {
+      for (PooledLiterals::iterator lit = (*it)->begin(); *lit != litFalse; lit++) {
         used[var(*lit)] = true;
       }
     }

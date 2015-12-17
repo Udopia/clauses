@@ -219,7 +219,7 @@ bool ClauseList::matchesFullGatePattern(Literal lit, ClauseList* other) {
 DynamicLiterals* ClauseList::getUnionOfLiterals() {
   DynamicLiterals* clause = new DynamicLiterals();
   for (ClauseList::iterator it = this->begin(); it != this->end(); it++) {
-    for (PooledLiterals::iterator it2 = (*it)->begin(); it2 != (*it)->end(); it2++) {
+    for (PooledLiterals::iterator it2 = (*it)->begin(); *it2 != litFalse; it2++) {
       if (!clause->contains(*it2)) {
         clause->add(*it2);
       }

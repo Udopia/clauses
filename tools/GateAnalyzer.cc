@@ -212,8 +212,7 @@ PooledLiterals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMetho
     PooledLiterals* result = NULL;
     for (ClauseList::iterator clause = list->begin(); clause != list->end();
         clause++) {
-      for (PooledLiterals::iterator clit = (*clause)->begin();
-          clit != (*clause)->end(); clit++) {
+      for (PooledLiterals::iterator clit = (*clause)->begin(); *clit != litFalse; clit++) {
         if (var(*clit) > var(maxLit)) {
           maxLit = *clit;
           result = *clause;
@@ -247,12 +246,12 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
 
     next->setMarked();
     getOrCreateGate(root)->addForwardClause(next);
-    for (PooledLiterals::iterator it = next->begin(); it != next->end(); it++) {
+    for (PooledLiterals::iterator it = next->begin(); *it != litFalse; it++) {
       setParent(root, *it);
     }
     index->augment(next, ~root);
 
-    for (PooledLiterals::iterator it = next->begin(); it != next->end(); it++) {
+    for (PooledLiterals::iterator it = next->begin(); *it != litFalse; it++) {
       if (*it != ~root)
         analyzeEncoding(*it, equivalence);
     }
@@ -264,7 +263,7 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDet
     next->setMarked();
     index->augment(next, ~root);
     getOrCreateGate(root)->addForwardClause(next);
-    for (PooledLiterals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
+    for (PooledLiterals::iterator it2 = next->begin(); *it2 != litFalse; it2++) {
       setParent(root, *it2);
     }
   }

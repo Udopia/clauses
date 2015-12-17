@@ -46,7 +46,7 @@ void ClauseIndex::createVars(Var v) {
 void ClauseIndex::add(PooledLiterals* clause) {
   createVars(clause->maxVar());
   nClauses++;
-  for (PooledLiterals::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
+  for (PooledLiterals::iterator lit = clause->begin(); *lit != litFalse; ++lit) {
     (*clauseMap)[*lit]->add(clause);
   }
 }
@@ -55,7 +55,7 @@ void ClauseIndex::addAll(ClauseList* list) {
   createVars(list->maxVar());
   nClauses += list->size();
   for(ClauseList::iterator clit = list->begin(); clit != list->end(); clit++) {
-    for (PooledLiterals::iterator lit = (*clit)->begin(); lit != (*clit)->end(); ++lit) {
+    for (PooledLiterals::iterator lit = (*clit)->begin(); *lit != litFalse; ++lit) {
       (*clauseMap)[*lit]->add(*clit);
     }
   }
@@ -64,7 +64,7 @@ void ClauseIndex::addAll(ClauseList* list) {
 
 void ClauseIndex::remove(PooledLiterals* clause) {
   nClauses--;
-  for (PooledLiterals::iterator it = clause->begin(); it != clause->end(); ++it) {
+  for (PooledLiterals::iterator it = clause->begin(); *it != litFalse; ++it) {
     Literal lit = *it;
     (*clauseMap)[lit]->remove(clause);
   }
