@@ -36,7 +36,7 @@ ClauseIndex::~ClauseIndex() {
 }
 
 void ClauseIndex::createVars(Var v) {
-  while (nVars <= v) {
+  while (nVars <= v+2) {
     Literal lit = mkLit(nVars++, false);
     (*clauseMap)[lit] = new Dark::ClauseList();
     (*clauseMap)[~lit] = new Dark::ClauseList();
@@ -44,20 +44,20 @@ void ClauseIndex::createVars(Var v) {
 }
 
 void ClauseIndex::add(PooledLiterals* clause) {
-  createVars(clause->maxVar());
   nClauses++;
   for (PooledLiterals::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
+    createVars(var(*lit));
+    if ((*clauseMap)[*lit] == NULL) {
+      printf("Literal %s%i; Max Variable %i", sign(*lit)?"-":"", var(*lit), nVars);
+      exit(1);
+    }
     (*clauseMap)[*lit]->add(clause);
   }
 }
 
 void ClauseIndex::addAll(ClauseList* list) {
-  createVars(list->maxVar());
-  nClauses += list->size();
   for(ClauseList::iterator clit = list->begin(); clit != list->end(); clit++) {
-    for (PooledLiterals::iterator lit = (*clit)->begin(); lit != (*clit)->end(); ++lit) {
-      (*clauseMap)[*lit]->add(*clit);
-    }
+    this->add(*clit);
   }
 }
 

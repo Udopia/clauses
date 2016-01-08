@@ -198,7 +198,8 @@ int main(int argc, char** argv) {
 
   double startTime = cpuTime();
   analyzer = new GateAnalyzer(clauses);
-  analyzer->analyzeEncoding(method, eq_method, tries);
+  //analyzer->analyzeEncoding(method, eq_method, tries);
+  analyzer->analyzeEncoding2(eq_method, tries);
   double endTime = cpuTime();
 
   int usedVars = clauses->countUsedVariables();

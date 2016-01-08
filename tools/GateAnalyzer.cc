@@ -176,6 +176,144 @@ bool GateAnalyzer::isMonotonousInput(Var var) {
 }
 
 /***
+ * The more general approach.
+ * Analyze until all clauses are part of the hierarchy.
+ * Select Clauses by the following heuristic:
+ * 1. first select all unit-clauses
+ * 2. if there is still a side-problem and no unit-clause left, select the one containing the biggest variable
+ * 3. in the end forge together all selected root-clauses by one unit that implies them all
+ */
+void GateAnalyzer::analyzeEncoding(RootSelectionMethod selectionMethod, EquivalenceDetectionMethod equivalenceDetectionMethod, int tries) {
+  analyzeEncoding(root, equivalenceDetectionMethod);
+
+  ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
+  for (int count = 0; count < tries && remainder->size() > 0; count++) {
+    PooledLiterals* next = getNextClause(remainder, selectionMethod);
+
+    next->setMarked();
+    getOrCreateGate(root)->addForwardClause(next);
+    for (PooledLiterals::iterator it = next->begin(); it != next->end(); it++) {
+      setParent(root, *it);
+    }
+    index->augment(next, ~root);
+
+    for (PooledLiterals::iterator it = next->begin(); it != next->end(); it++) {
+      if (*it != ~root)
+        analyzeEncoding(*it, equivalenceDetectionMethod);
+    }
+    remainder->dumpByCriteria(createMarkFilter());
+  }
+
+  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
+    PooledLiterals* next = *it;
+    next->setMarked();
+    index->augment(next, ~root);
+    getOrCreateGate(root)->addForwardClause(next);
+    for (PooledLiterals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
+      setParent(root, *it2);
+    }
+  }
+
+  delete remainder;
+}
+
+// variant of the above that selects multiple clauses per try
+void GateAnalyzer::analyzeEncoding2(EquivalenceDetectionMethod equivalenceDetectionMethod, int tries) {
+  analyzeEncoding(root, equivalenceDetectionMethod);
+
+  ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
+  for (int count = 0; count < tries && remainder->size() > 0; count++) {
+    ClauseList* nextClauses = getNextClauses(remainder);
+
+    // thread next clauses
+    for (ClauseList::iterator clit = nextClauses->begin(); clit != nextClauses->end(); clit++) {
+      PooledLiterals* clause = *clit;
+      clause->setMarked();
+      getOrCreateGate(root)->addForwardClause(clause);
+      for (PooledLiterals::iterator it = clause->begin(); it != clause->end(); it++) {
+        setParent(root, *it);
+      }
+      index->augment(clause, ~root);
+    }
+
+    // iterate new inputs
+    for (ClauseList::iterator clit = nextClauses->begin(); clit != nextClauses->end(); clit++) {
+      PooledLiterals* clause = *clit;
+      for (PooledLiterals::iterator it = clause->begin(); it != clause->end(); it++) {
+        if (*it != ~root)
+          analyzeEncoding(*it, equivalenceDetectionMethod);
+      }
+    }
+    remainder->dumpByCriteria(createMarkFilter());
+  }
+
+  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
+    PooledLiterals* next = *it;
+    next->setMarked();
+    index->augment(next, ~root);
+    getOrCreateGate(root)->addForwardClause(next);
+    for (PooledLiterals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
+      setParent(root, *it2);
+    }
+  }
+
+  delete remainder;
+}
+
+/*******
+ * Create a DAG starting from a fact. Detect cycles and stop if necessary
+ ***/
+void GateAnalyzer::analyzeEncoding(Literal root, EquivalenceDetectionMethod equivalenceDetectionMethod) {
+  D1(fprintf(stderr, "Root is %s%i\n", sign(root) ? "-" : "", var(root)+1);)
+
+  // a queue of literals that grows while checking for implicates
+  vector<Literal>* literals = new vector<Literal>();
+  literals->push_back(root);
+
+  // while there are literals in the queue we check for children and add them to the queue
+  for (unsigned int i_lit = 0; i_lit < literals->size(); i_lit++) {
+    Literal output = (*literals)[i_lit];
+
+    // Stop on projection (forced inputs)
+    if (projectionContains(var(output))) {
+      continue;
+    }
+
+    Gate* gate = NULL;
+
+    ClauseList* fwd = index->getClauses(~output)->getByCriteria(createNoMarkFilter());
+    ClauseList* bwd = index->getClauses(output)->getByCriteria(createNoMarkFilter());
+
+    D1(
+        fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);
+        fwd->print(stderr);
+        bwd->print(stderr);
+        fprintf(stderr, "\n");
+    )
+
+    if (fwd->size() > 0 && bwd->isBlockedBy(output, fwd)) {
+      if (isMonotonousInput(var(output))) {
+        D1(fprintf(stderr, "Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
+        gate = defGate(output, fwd, bwd);
+      } else if (isFullEncoding(output, fwd, bwd, equivalenceDetectionMethod)){ // non-monotonous
+        D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
+        gate = defGate(output, fwd, bwd);
+        gate->setHasNonMonotonousParent();
+      }
+    }
+
+    if (gate != NULL) {
+      literals->insert(literals->end(), gate->getInputs()->begin(), gate->getInputs()->end());
+    } else {
+      delete bwd;
+      delete fwd;
+    }
+  }
+
+  delete literals;
+}
+
+/***
  * Algorithm Refinement, after submission to SAT:
  * 1. Conceptually add sth. like pure-decomposition for a better clause-selection heuristic
  *    by always picking the bunch of clauses for the selected literal (based on min-occurence heuristic).
@@ -228,101 +366,6 @@ PooledLiterals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMetho
   default:
     return list->getLast();
   }
-}
-
-/***
- * The more general approach.
- * Analyze until all clauses are part of the hierarchy.
- * Select Clauses by the following heuristic:
- * 1. first select all unit-clauses
- * 2. if there is still a side-problem and no unit-clause left, select the one containing the biggest variable
- * 3. in the end forge together all selected root-clauses by one unit that implies them all
- */
-void GateAnalyzer::analyzeEncoding(RootSelectionMethod selection, EquivalenceDetectionMethod equivalence, int tries) {
-  analyzeEncoding(root, equivalence);
-
-  ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
-  for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    PooledLiterals* next = getNextClause(remainder, selection);
-
-    next->setMarked();
-    getOrCreateGate(root)->addForwardClause(next);
-    for (PooledLiterals::iterator it = next->begin(); it != next->end(); it++) {
-      setParent(root, *it);
-    }
-    index->augment(next, ~root);
-
-    for (PooledLiterals::iterator it = next->begin(); it != next->end(); it++) {
-      if (*it != ~root)
-        analyzeEncoding(*it, equivalence);
-    }
-    remainder->dumpByCriteria(createMarkFilter());
-  }
-
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
-    PooledLiterals* next = *it;
-    next->setMarked();
-    index->augment(next, ~root);
-    getOrCreateGate(root)->addForwardClause(next);
-    for (PooledLiterals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
-      setParent(root, *it2);
-    }
-  }
-
-  delete remainder;
-}
-
-/*******
- * Create a DAG starting from a fact. Detect cycles and stop if necessary
- ***/
-void GateAnalyzer::analyzeEncoding(Literal root, EquivalenceDetectionMethod equivalence) {
-  D1(fprintf(stderr, "Root is %s%i\n", sign(root) ? "-" : "", var(root)+1);)
-
-  // a queue of literals that grows while checking for implicates
-  vector<Literal>* literals = new vector<Literal>();
-  literals->push_back(root);
-
-  // while there are literals in the queue we check for children and add them to the queue
-  for (unsigned int i_lit = 0; i_lit < literals->size(); i_lit++) {
-    Literal output = (*literals)[i_lit];
-
-    // Stop on projection (forced inputs)
-    if (projectionContains(var(output))) {
-      continue;
-    }
-
-    Gate* gate = NULL;
-
-    ClauseList* fwd = index->getClauses(~output)->getByCriteria(createNoMarkFilter());
-    ClauseList* bwd = index->getClauses(output)->getByCriteria(createNoMarkFilter());
-
-    D1(
-        fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output)+1);
-        fwd->print(stderr);
-        bwd->print(stderr);
-        fprintf(stderr, "\n");
-    )
-
-    if (fwd->size() > 0 && bwd->isBlockedBy(output, fwd)) {
-      if (isMonotonousInput(var(output))) {
-        D1(fprintf(stderr, "Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
-        gate = defGate(output, fwd, bwd);
-      } else if (isFullEncoding(output, fwd, bwd, equivalence)){ // non-monotonous
-        D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
-        gate = defGate(output, fwd, bwd);
-        gate->setHasNonMonotonousParent();
-      }
-    }
-
-    if (gate != NULL) {
-      literals->insert(literals->end(), gate->getInputs()->begin(), gate->getInputs()->end());
-    } else {
-      delete bwd;
-      delete fwd;
-    }
-  }
-
-  delete literals;
 }
 
 bool GateAnalyzer::isFullEncoding(Literal output, ClauseList* fwd,
@@ -407,22 +450,6 @@ void GateAnalyzer::undefGate(Gate* gate) {
   delete gate;
   (*gates)[var(gate->getOutput())] = NULL;
   unsetParent(gate->getOutput());
-}
-
-bool GateAnalyzer::isLitMonotonousInput(Literal output) {
-  if (hasParents(~output)) {
-    return false;
-  }
-
-  vector<Literal>* parents = getParents(output);
-  for (vector<Literal>::iterator it = parents->begin(); it != parents->end();
-      it++) {
-    if (getGate(*it)->hasNonMonotonousParent()) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 void GateAnalyzer::setProjection(Projection* projection) {

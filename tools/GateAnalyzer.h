@@ -44,6 +44,7 @@ public:
   virtual ~GateAnalyzer();
 
   void analyzeEncoding(RootSelectionMethod selection, EquivalenceDetectionMethod eqivalence, int tries);
+  void analyzeEncoding2(EquivalenceDetectionMethod eqivalence, int tries);
 
   /**
    * Access Gate-Structure
@@ -69,10 +70,6 @@ public:
   ClauseList* getClauses() {
     return (ClauseList*)clauses;
   }
-
-  vector<vector<Literal>*>* findConfluentOutputs();
-  vector<int>* getRecursiveGateOrWidths();
-  void augmentClauses(int minWidth = 0);
 
 
 private:
@@ -104,14 +101,8 @@ private:
   bool semanticCheck(Literal output, ClauseList* fwd);
   bool increment(vector<int>& positions, vector<int> maxima);
 
-  bool classifyEncoding(Literal literal);
-
-  bool isLitMonotonousInput(Literal output);
-
   PooledLiterals* getNextClause(ClauseList* list, RootSelectionMethod method);
   ClauseList* getNextClauses(ClauseList* list);
-
-  void freeAllContent();
 };
 
 }

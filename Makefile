@@ -55,25 +55,25 @@ all: cnf2aig cnf2dot geninp metrics
 # Tool invocations
 cnf2aig: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -o "$@" $(OBJS) $@.o -lz $(MINI2)
+	g++ -static -o "$@" $(OBJS) $@.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 cnf2dot: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -o "cnf2dot" $(OBJS) cnf2dot.o -lz $(MINI2)
+	g++ -static -o "cnf2dot" $(OBJS) cnf2dot.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 geninp: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -o "geninp" $(OBJS) geninp.o -lz $(MINI2)
+	g++ -static -o "geninp" $(OBJS) geninp.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 metrics: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -o "metrics" $(OBJS) metrics.o -lz $(MINI2)
+	g++ -static -o "metrics" $(OBJS) metrics.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
