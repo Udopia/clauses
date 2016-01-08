@@ -17,14 +17,9 @@ Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
   this->backward = backward;
   this->nonMonotonousParent = false;
 
-  //printf("New Gate with output %s%i\n", sign(output)?"-":"", var(output)+1);
-  //forward->print();
-  //printf("\n");
-
   this->inputs = new vector<Literal>();
-  for (ClauseList::iterator it = forward->begin(); it != forward->end(); it++) {
-    Dark::PooledLiterals* clause = *it;
-    for (PooledLiterals::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
+  for (ClauseList::iterator clause = forward->begin(); clause != forward->end(); clause++) {
+    for (PooledLiterals::iterator lit = (*clause)->begin(); *lit != litFalse; ++lit) {
       if (*lit != ~output) {
         inputs->push_back(*lit);
       }

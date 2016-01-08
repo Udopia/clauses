@@ -22,7 +22,7 @@ private:
   void grow();
 
 public:
-  typedef Literal* Offset;
+  typedef unsigned int Offset;
 
   unsigned int initialSize = 100000;
 
@@ -30,7 +30,7 @@ public:
   virtual ~LiteralPool();
 
   Literal get(int i);
-  Literal* resolve(Offset);
+  Literal* resolve(Offset ref);
 
   Offset alloc(unsigned int count);
   Offset alloc(Literal literals[], unsigned int count);

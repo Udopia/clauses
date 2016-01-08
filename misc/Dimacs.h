@@ -63,16 +63,16 @@ private:
 
   template<class B>
   Dark::PooledLiterals* readClause(B& in) {
-    Literal* lit = buffer;
+    Literal* lbp = buffer;
     int parsed_lit = parseInt(in);
     while (parsed_lit != 0) {
       int var = abs(parsed_lit);
-      while (var >= trueVars) trueVars++;
-      *lit = mkLit(var, parsed_lit < 0);
-      lit++;
+      if (var > trueVars) trueVars = var;
+      *lbp = mkLit(var, parsed_lit < 0);
+      lbp++;
       parsed_lit = parseInt(in);
     }
-    *lit = litFalse;
+    *lbp = litFalse;
     return new Dark::PooledLiterals(buffer);
   }
 

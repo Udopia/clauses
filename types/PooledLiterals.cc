@@ -74,7 +74,7 @@ PooledLiterals::iterator PooledLiterals::begin() {
 }
 
 PooledLiterals::iterator PooledLiterals::end() {
-  return pool->resolve((Literal*)(literals + nlits));
+  return pool->resolve(literals + nlits);
 }
 
 void PooledLiterals::add(Literal lit) {
@@ -88,9 +88,9 @@ void PooledLiterals::add(Literal lit) {
 }
 
 void PooledLiterals::addAll(PooledLiterals* clause) {
-  Literal* lits = pool->alloc(nlits + clause->nlits);
+  LiteralPool::Offset lits = pool->alloc(nlits + clause->nlits);
   memcpy(pool->resolve(lits), begin(), nlits);
-  memcpy(pool->resolve(lits) + nlits, clause->begin(), clause->nlits);
+  memcpy(pool->resolve(lits + nlits), clause->begin(), clause->nlits);
   pool->free(literals);
   literals = lits;
   max_var = std::max(clause->max_var, max_var);
@@ -179,6 +179,7 @@ void PooledLiterals::print(FILE* out) {
     if (it != begin()) fprintf(out, ", ");
     fprintf(out, "%s%i", sign(*it)?"-":"", var(*it));
   }
+  fprintf(out, " ");
 }
 
 void PooledLiterals::println(FILE* out) {

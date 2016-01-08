@@ -83,7 +83,7 @@ void BlockedClauseDecomposition::postprocess() {
   map<PooledLiterals*, int>* clauseScores = new map<PooledLiterals*, int>();
   for (ClauseList::iterator clause_it = small->begin(); clause_it != small->end(); clause_it++) {
     int score = 0;
-    for (PooledLiterals::iterator lit_it = (*clause_it)->begin(); lit_it != (*clause_it)->end(); lit_it++) {
+    for (PooledLiterals::iterator lit_it = (*clause_it)->begin(); *lit_it != litFalse; lit_it++) {
       score += index->countOccurence(~(*lit_it));
     }
     (*clauseScores)[*clause_it] = score;
@@ -172,7 +172,7 @@ ClauseList* BlockedClauseDecomposition::eliminateBlockedClauses(ClauseIndex* ind
         blockedClauses->add(clause);
         index->remove(clause);
         // push all literals to the stack
-        for (PooledLiterals::iterator iter = clause->begin(); iter != clause->end(); iter++) {
+        for (PooledLiterals::iterator iter = clause->begin(); *iter != litFalse; iter++) {
           Literal l = *iter;
           if (notInStack[toInt(~l)]) {
             litsToCheck->push(~l);

@@ -47,10 +47,6 @@ void ClauseIndex::add(PooledLiterals* clause) {
   nClauses++;
   for (PooledLiterals::iterator lit = clause->begin(); lit != clause->end(); ++lit) {
     createVars(var(*lit));
-    if ((*clauseMap)[*lit] == NULL) {
-      printf("Literal %s%i; Max Variable %i", sign(*lit)?"-":"", var(*lit), nVars);
-      exit(1);
-    }
     (*clauseMap)[*lit]->add(clause);
   }
 }
@@ -64,7 +60,7 @@ void ClauseIndex::addAll(ClauseList* list) {
 
 void ClauseIndex::remove(PooledLiterals* clause) {
   nClauses--;
-  for (PooledLiterals::iterator it = clause->begin(); it != clause->end(); ++it) {
+  for (PooledLiterals::iterator it = clause->begin(); *it != litFalse; ++it) {
     Literal lit = *it;
     (*clauseMap)[lit]->remove(clause);
   }
