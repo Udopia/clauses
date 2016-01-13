@@ -89,7 +89,7 @@ private:
 
   MinisatSolver* getMinisatSolver();
 
-  void analyzeEncoding(Literal root, EquivalenceDetectionMethod eqivalence);
+  void analyzeEncodingForRoot(Literal root, EquivalenceDetectionMethod eqivalence);
 
   void setParent(Literal parent, Literal child);
   void unsetParent(Literal parent);

@@ -227,8 +227,11 @@ void PooledLiterals::inlineNegate() {
 }
 
 bool PooledLiterals::isBlockedBy(Literal blocking, PooledLiterals* clause) {
-  for (Literal* lit = pool->resolve(literals); *lit != litFalse; lit++) {
-    if (*lit == ~blocking) return true;
+  for (PooledLiterals::iterator it = clause->begin(); *it != litFalse; ++it) {
+    Literal& lit = *it;
+    if (lit != ~blocking && this->contains(~lit)) {
+      return true;
+    }
   }
   return false;
 }

@@ -59,6 +59,7 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList) {
 
   // create artificial root unit-clause and subordinate the existing unit-clauses
   ClauseList* units = clauses->getByCriteria(createUnitFilter());
+  D1(fprintf(stderr, "Number of Units is %i\n", units->size());)
   clauses->add(rootClause); // note: it is important to add the new unit _after_ filtering the existing units
   index->add(rootClause);
   for (unsigned int i = 0; i < units->size(); i++) {
@@ -185,11 +186,13 @@ bool GateAnalyzer::isMonotonousInput(Var var) {
  * 3. in the end forge together all selected root-clauses by one unit that implies them all
  */
 void GateAnalyzer::analyzeEncoding(RootSelectionMethod selectionMethod, EquivalenceDetectionMethod equivalenceDetectionMethod, int tries) {
-  analyzeEncoding(root, equivalenceDetectionMethod);
+  analyzeEncodingForRoot(root, equivalenceDetectionMethod);
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
   for (int count = 0; count < tries && remainder->size() > 0; count++) {
     PooledLiterals* next = getNextClause(remainder, selectionMethod);
+
+    D1(fprintf(stderr, "Remainder size is %i;\n", remainder->size());)
 
     next->setMarked();
     getOrCreateGate(root)->addForwardClause(next);
@@ -200,7 +203,7 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selectionMethod, Equivale
 
     for (PooledLiterals::iterator it = next->begin(); *it != litFalse; it++) {
       if (*it != ~root)
-        analyzeEncoding(*it, equivalenceDetectionMethod);
+        analyzeEncodingForRoot(*it, equivalenceDetectionMethod);
     }
     remainder->dumpByCriteria(createMarkFilter());
   }
@@ -220,7 +223,7 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selectionMethod, Equivale
 
 // variant of the above that selects multiple clauses per try
 void GateAnalyzer::analyzeEncoding2(EquivalenceDetectionMethod equivalenceDetectionMethod, int tries) {
-  analyzeEncoding(root, equivalenceDetectionMethod);
+  analyzeEncodingForRoot(root, equivalenceDetectionMethod);
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
   for (int count = 0; count < tries && remainder->size() > 0; count++) {
@@ -242,7 +245,7 @@ void GateAnalyzer::analyzeEncoding2(EquivalenceDetectionMethod equivalenceDetect
       PooledLiterals* clause = *clit;
       for (PooledLiterals::iterator it = clause->begin(); it != clause->end(); it++) {
         if (*it != ~root)
-          analyzeEncoding(*it, equivalenceDetectionMethod);
+          analyzeEncodingForRoot(*it, equivalenceDetectionMethod);
       }
     }
     remainder->dumpByCriteria(createMarkFilter());
@@ -264,7 +267,7 @@ void GateAnalyzer::analyzeEncoding2(EquivalenceDetectionMethod equivalenceDetect
 /*******
  * Create a DAG starting from a fact. Detect cycles and stop if necessary
  ***/
-void GateAnalyzer::analyzeEncoding(Literal root, EquivalenceDetectionMethod equivalenceDetectionMethod) {
+void GateAnalyzer::analyzeEncodingForRoot(Literal root, EquivalenceDetectionMethod equivalenceDetectionMethod) {
   D1(fprintf(stderr, "Root is %s%i\n", sign(root) ? "-" : "", var(root));)
 
   // a queue of literals that grows while checking for implicates
@@ -287,9 +290,9 @@ void GateAnalyzer::analyzeEncoding(Literal root, EquivalenceDetectionMethod equi
 
     D1(
         fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output));
-        //fwd->print(stderr);
-        //bwd->print(stderr);
-        //fprintf(stderr, "\n");
+        fwd->print(stderr);
+        bwd->print(stderr);
+        fprintf(stderr, "\n");
     )
 
     if (fwd->size() > 0 && bwd->isBlockedBy(output, fwd)) {

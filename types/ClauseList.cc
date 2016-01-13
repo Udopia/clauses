@@ -189,8 +189,7 @@ bool ClauseList::isBlockedBy(Literal blocking, PooledLiterals* clause) {
 
 bool ClauseList::isBlockedBy(Literal lit, ClauseList* list) {
   for (iterator it = list->begin(); it != list->end(); it++) {
-    PooledLiterals* cl = *it;
-    if (!(this->isBlockedBy(lit, cl))) {
+    if (!(this->isBlockedBy(lit, *it))) {
       return false;
     }
   }
@@ -264,6 +263,7 @@ void ClauseList::print(FILE* out) {
     Dark::PooledLiterals* clause = (*clauses)[i];
     if (clause != NULL) {
       clause->print(out);
+      fprintf(out, "; ");
     } else {
       fprintf(out, "NULL; ");
     }
