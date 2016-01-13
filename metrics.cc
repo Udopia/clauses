@@ -116,12 +116,13 @@ int main(int argc, char** argv) {
   }
 
   char* filename = argv[1];
-  RootSelectionMethod method = FIRST_CLAUSE;
+  RootSelectionMethod method = MIN_OCCURENCE;
   EquivalenceDetectionMethod eq_method = PATTERNS;
-  int tries = 1;
+  int tries = 3;
   bool help = false;
   bool purity = false;
   bool bcd = false;
+  bool useAlternativeMethod = false;
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-m") == 0 && i < argc - 1) {
@@ -152,6 +153,9 @@ int main(int argc, char** argv) {
     }
     else if (strcmp(argv[i], "-p") == 0) {
       purity = true;
+    }
+    else if (strcmp(argv[i], "-2") == 0) {
+      useAlternativeMethod = true;
     }
     else {
       filename = argv[i];
@@ -198,8 +202,11 @@ int main(int argc, char** argv) {
 
   double startTime = cpuTime();
   analyzer = new GateAnalyzer(clauses);
-  //analyzer->analyzeEncoding(method, eq_method, tries);
-  analyzer->analyzeEncoding2(eq_method, tries);
+  if (!useAlternativeMethod) {
+    analyzer->analyzeEncoding(method, eq_method, tries);
+  } else {
+    analyzer->analyzeEncoding2(eq_method, tries);
+  }
   double endTime = cpuTime();
 
   int usedVars = clauses->countUsedVariables();
@@ -229,10 +236,10 @@ int main(int argc, char** argv) {
   }
   sort(nClausesInGate->begin(), nClausesInGate->end());
   //int min = (*nClausesInGate)[0];
-  int medWidth = (*nClausesInGate)[nClausesInGate->size() / 2];
-  int maxWidth3 = (*nClausesInGate)[nClausesInGate->size() - 3];
-  int maxWidth2 = (*nClausesInGate)[nClausesInGate->size() - 2];
-  int maxWidth1 = (*nClausesInGate)[nClausesInGate->size() - 1];
+  int medWidth = nClausesInGate->size() > 0 ? (*nClausesInGate)[nClausesInGate->size() / 2] : 0;
+  int maxWidth3 = nClausesInGate->size() > 0 ? (*nClausesInGate)[nClausesInGate->size() - 3] : 0;
+  int maxWidth2 = nClausesInGate->size() > 0 ? (*nClausesInGate)[nClausesInGate->size() - 2] : 0;
+  int maxWidth1 = nClausesInGate->size() > 0 ? (*nClausesInGate)[nClausesInGate->size() - 1] : 0;
 
   setDepths(analyzer->getRoot());
   setDepths2(analyzer->getRoot());
