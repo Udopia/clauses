@@ -69,7 +69,7 @@ LiteralPool::Offset LiteralPool::alloc(Literal literals[]) {
 }
 
 void LiteralPool::free(LiteralPool::Offset ref) {
-  Literal* p = resolve(ref);
+  Literal* p = this->resolve(ref);
   while (*p != litFalse) {
     *p = litFalse;
     p++;

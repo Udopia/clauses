@@ -222,12 +222,12 @@ void GateAnalyzer::analyzeEncoding(RootSelectionMethod selectionMethod, Equivale
 }
 
 // variant of the above that selects multiple clauses per try
-void GateAnalyzer::analyzeEncoding2(EquivalenceDetectionMethod equivalenceDetectionMethod, int tries) {
+void GateAnalyzer::analyzeEncoding2(RootSelectionMethod selectionMethod, EquivalenceDetectionMethod equivalenceDetectionMethod, int tries) {
   analyzeEncodingForRoot(root, equivalenceDetectionMethod);
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
   for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    ClauseList* nextClauses = getNextClauses(remainder);
+    ClauseList* nextClauses = getNextClauses(remainder, selectionMethod);
 
     // thread next clauses
     for (ClauseList::iterator clit = nextClauses->begin(); clit != nextClauses->end(); clit++) {
@@ -317,31 +317,48 @@ void GateAnalyzer::analyzeEncodingForRoot(Literal root, EquivalenceDetectionMeth
   delete literals;
 }
 
-/***
- * Algorithm Refinement, after submission to SAT:
- * 1. Conceptually add sth. like pure-decomposition for a better clause-selection heuristic
- *    by always picking the bunch of clauses for the selected literal (based on min-occurence heuristic).
- *    Maybe this make several tries more effective.
- * 2. Still need to implement the optimization of data-structure developed for the paper [O(1) monotonicity-check]
- */
-ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
-  Literal min;
-  int minOcc = INT_MAX;
-  ClauseIndex* index = new ClauseIndex(list);
-  for (int i = 0; i < list->maxVar(); i++) {
-    Literal lit = mkLit(i, false);
-    int occ = index->countOccurence(lit);
-    if (occ != 0 && occ < minOcc) {
-      minOcc = occ;
-      min = lit;
+ClauseList* GateAnalyzer::getNextClauses(ClauseList* list, RootSelectionMethod method) {
+  switch (method) {
+  case MIN_OCCURENCE: {
+    Literal min;
+    int minOcc = INT_MAX;
+    ClauseIndex* index = new ClauseIndex(list);
+    for (int i = 0; i < list->maxVar(); i++) {
+      Literal lit = mkLit(i, false);
+      int occ = index->countOccurence(lit);
+      if (occ != 0 && occ < minOcc) {
+        minOcc = occ;
+        min = lit;
+      }
+      occ = index->countOccurence(~lit);
+      if (occ != 0 && occ < minOcc) {
+        minOcc = occ;
+        min = ~lit;
+      }
     }
-    occ = index->countOccurence(~lit);
-    if (occ != 0 && occ < minOcc) {
-      minOcc = occ;
-      min = ~lit;
-    }
+    return index->getClauses(min);
   }
-  return index->getClauses(min);
+  case PURITY: {
+    Var maxVar;
+    double maxPurity = 0;
+    ClauseIndex* index = new ClauseIndex(list);
+    for (int i = 0; i < list->maxVar(); i++) {
+      Literal lit = mkLit(i, false);
+      double pos = index->countOccurence(lit);
+      double neg = index->countOccurence(~lit);
+      double purity = abs(pos - neg) / (pos + neg);
+      if (purity > maxPurity) {
+        maxPurity = purity;
+        maxVar = i;
+      }
+    }
+    double pos = index->countOccurence(mkLit(maxVar, false));
+    double neg = index->countOccurence(mkLit(maxVar, true));
+    return pos < neg ? index->getClauses(mkLit(maxVar, false)) : index->getClauses(mkLit(maxVar, true));
+  }
+  default:
+    return list;
+  }
 }
 
 PooledLiterals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
@@ -365,7 +382,10 @@ PooledLiterals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMetho
     return result;
   }
   case MIN_OCCURENCE: {
-    return getNextClauses(list)->getFirst();
+    return getNextClauses(list, method)->getFirst();
+  }
+  case PURITY: {
+    return getNextClauses(list, method)->getFirst();
   }
   default:
     return list->getLast();

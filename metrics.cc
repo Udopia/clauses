@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
   bool help = false;
   bool purity = false;
   bool bcd = false;
-  bool useAlternativeMethod = false;
+  bool useOldMethod = false;
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-m") == 0 && i < argc - 1) {
@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
       switch (m) {
       case 1: method = MAX_ID; break;
       case 2: method = MIN_OCCURENCE; break;
-      case 3: method = PURE; break;
+      case 3: method = PURITY; break;
       default: method = FIRST_CLAUSE;
       }
     }
@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
       purity = true;
     }
     else if (strcmp(argv[i], "-2") == 0) {
-      useAlternativeMethod = true;
+      useOldMethod = true;
     }
     else {
       filename = argv[i];
@@ -202,10 +202,10 @@ int main(int argc, char** argv) {
 
   double startTime = cpuTime();
   analyzer = new GateAnalyzer(clauses);
-  if (!useAlternativeMethod) {
+  if (useOldMethod) {
     analyzer->analyzeEncoding(method, eq_method, tries);
   } else {
-    analyzer->analyzeEncoding2(eq_method, tries);
+    analyzer->analyzeEncoding2(method, eq_method, tries);
   }
   double endTime = cpuTime();
 
