@@ -1,0 +1,8 @@
+c Cardinality constraint <=k(x_1,...,x_n) for k = 2 and n = 2.
+c Adders are encoded using implications.
+c The numbers of clauses and variables on the next line are just upper bounds!
+p cnf 4 4
+1 -2 3 0
+-1 2 3 0
+-1 -2 4 0
+-3 -4 0

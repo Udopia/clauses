@@ -1,0 +1,12 @@
+Programs to compute conjunctive normal forms (CNFs) of Boolean cardinality
+constraints of the form <=k(x_1,...,x_n).
+
+ParCounter: uses a parallel binary counter circuit
+SeqCounter: uses a sequential unary circuit
+
+Compile programs using 'make'.
+Run programs with two command line parameters: <k> and <n>; output is written
+to stdout, so typical usage is, e.g.
+  ParCounter 3 100 > card.cnf
+
+(c) 2005 Carsten Sinz, University of Tuebingen, Germany
