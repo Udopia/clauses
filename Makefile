@@ -2,12 +2,12 @@
 SRCS = $(wildcard misc/*.cc) $(wildcard types/*.cc) $(wildcard tools/*.cc) $(wildcard filters/*.cc) $(wildcard minisat/*.cc) $(wildcard ./*.cc)
 HDRS = $(wildcard misc/*.h) $(wildcard types/*.h) $(wildcard tools/*.h) $(wildcard filters/*.h) $(wildcard minisat/*.h) $(wildcard ./*.h)
 
-MAINS = ./cnf2aig.o ./cnf2dot.o ./geninp.o ./metrics.o
+MAINS = ./cnf2aig.o ./cnf2dot.o ./geninp.o ./metrics.o ./spectrum.o
 ALLOBJS = $(SRCS:.cc=.o)
 OBJS = $(filter-out $(MAINS), $(ALLOBJS))
 DEPS = $(SRCS:.cc=.d)
 
-MINI = -DMINISAT_TYPES=1 -Iminisat/solver
+MINI = -DMINISAT_TYPES=1 -Iminisat/solver -I/usr/include/eigen3
 MINI2 = -Lminisat/solver/build/release/lib -lminisat
 
 #CFLAGS = $(MINI) -D__GXX_EXPERIMENTAL_CXX0X__ -D__STDC_CONSTANT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -O3 -Wall -c -fmessage-length=0 -std=c++11 -fpermissive
@@ -77,12 +77,18 @@ metrics: $(ALLOBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
+spectrum: $(ALLOBJS)
+	@echo 'Building target: $@'
+	g++ -static -o "spectrum" $(OBJS) spectrum.o -lz $(MINI2)
+	@echo 'Finished building target: $@'
+	@echo ' '
+
 # Other Targets
 clean:
 	rm $(ALLOBJS) $(DEPS)
 
 realclean: clean
-	rm cnf2aig cnf2dot geninp metrics
+	rm cnf2aig cnf2dot geninp metrics spectrum
 
 
 
