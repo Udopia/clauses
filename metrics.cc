@@ -120,18 +120,15 @@ int main(int argc, char** argv) {
   EquivalenceDetectionMethod eq_method = PATTERNS;
   int tries = 3;
   bool help = false;
-  bool purity = false;
   bool bcd = false;
-  bool useOldMethod = false;
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-m") == 0 && i < argc - 1) {
       int m = atoi(argv[++i]);
       switch (m) {
-      case 1: method = MAX_ID; break;
       case 2: method = MIN_OCCURENCE; break;
       case 3: method = PURITY; break;
-      default: method = FIRST_CLAUSE;
+      default: method = MIN_OCCURENCE;
       }
     }
     else if (strcmp(argv[i], "-e") == 0 && i < argc - 1) {
@@ -150,12 +147,6 @@ int main(int argc, char** argv) {
     }
     else if (strcmp(argv[i], "-b") == 0) {
       bcd = true;
-    }
-    else if (strcmp(argv[i], "-p") == 0) {
-      purity = true;
-    }
-    else if (strcmp(argv[i], "-2") == 0) {
-      useOldMethod = true;
     }
     else {
       filename = argv[i];
@@ -202,11 +193,7 @@ int main(int argc, char** argv) {
 
   double startTime = cpuTime();
   analyzer = new GateAnalyzer(clauses);
-  if (useOldMethod) {
-    analyzer->analyzeEncoding(method, eq_method, tries);
-  } else {
-    analyzer->analyzeEncoding2(method, eq_method, tries);
-  }
+  analyzer->analyzeEncoding(method, eq_method, tries);
   double endTime = cpuTime();
 
   int usedVars = clauses->countUsedVariables();
@@ -257,14 +244,9 @@ int main(int argc, char** argv) {
     }
   }
 
-  if (purity) {
-    fprintf(stdout, "%s,%i,%i,%i\n", filename, nGates, nSimpleGates, nUsedGates);
-  } else {
-    fprintf(stdout, "%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.2f\n",
+  fprintf(stdout, "%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.2f\n",
         filename, usedVars, nClauses, nGates, maxDepth1, maxDepth2, maxWidth1, maxWidth2, maxWidth3, medWidth, endTime - startTime);
-  }
 
-  exit(0);
 }
 
 

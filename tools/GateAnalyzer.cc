@@ -182,47 +182,10 @@ bool GateAnalyzer::isMonotonousInput(Var var) {
  * Analyze until all clauses are part of the hierarchy.
  * Select Clauses by the following heuristic:
  * 1. first select all unit-clauses
- * 2. if there is still a side-problem and no unit-clause left, select the one containing the biggest variable
+ * 2. if there is still a side-problem and no unit-clause left, select set of of clauses by heuristic
  * 3. in the end forge together all selected root-clauses by one unit that implies them all
  */
 void GateAnalyzer::analyzeEncoding(RootSelectionMethod selectionMethod, EquivalenceDetectionMethod equivalenceDetectionMethod, int tries) {
-  analyzeEncodingForRoot(root, equivalenceDetectionMethod);
-
-  ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
-  for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    PooledLiterals* next = getNextClause(remainder, selectionMethod);
-
-    D1(fprintf(stderr, "Remainder size is %i;\n", remainder->size());)
-
-    next->setMarked();
-    getOrCreateGate(root)->addForwardClause(next);
-    for (PooledLiterals::iterator it = next->begin(); *it != litFalse; it++) {
-      setParent(root, *it);
-    }
-    index->augment(next, ~root);
-
-    for (PooledLiterals::iterator it = next->begin(); *it != litFalse; it++) {
-      if (*it != ~root)
-        analyzeEncodingForRoot(*it, equivalenceDetectionMethod);
-    }
-    remainder->dumpByCriteria(createMarkFilter());
-  }
-
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
-    PooledLiterals* next = *it;
-    next->setMarked();
-    index->augment(next, ~root);
-    getOrCreateGate(root)->addForwardClause(next);
-    for (PooledLiterals::iterator it2 = next->begin(); it2 != next->end(); it2++) {
-      setParent(root, *it2);
-    }
-  }
-
-  delete remainder;
-}
-
-// variant of the above that selects multiple clauses per try
-void GateAnalyzer::analyzeEncoding2(RootSelectionMethod selectionMethod, EquivalenceDetectionMethod equivalenceDetectionMethod, int tries) {
   analyzeEncodingForRoot(root, equivalenceDetectionMethod);
 
   ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
@@ -358,37 +321,6 @@ ClauseList* GateAnalyzer::getNextClauses(ClauseList* list, RootSelectionMethod m
   }
   default:
     return list;
-  }
-}
-
-PooledLiterals* GateAnalyzer::getNextClause(ClauseList* list, RootSelectionMethod method) {
-  switch (method) {
-  case FIRST_CLAUSE: {
-    return list->getFirst();
-  }
-  case MAX_ID: {
-    Literal maxLit = mkLit(0, false);
-    PooledLiterals* result = NULL;
-    for (ClauseList::iterator clause = list->begin(); clause != list->end();
-        clause++) {
-      for (PooledLiterals::iterator clit = (*clause)->begin();
-          clit != (*clause)->end(); clit++) {
-        if (var(*clit) > var(maxLit)) {
-          maxLit = *clit;
-          result = *clause;
-        }
-      }
-    }
-    return result;
-  }
-  case MIN_OCCURENCE: {
-    return getNextClauses(list, method)->getFirst();
-  }
-  case PURITY: {
-    return getNextClauses(list, method)->getFirst();
-  }
-  default:
-    return list->getLast();
   }
 }
 

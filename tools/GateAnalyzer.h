@@ -31,7 +31,7 @@ class ClauseIndex;
 class Gate;
 
 enum RootSelectionMethod {
-  FIRST_CLAUSE, MAX_ID, MIN_OCCURENCE, PURITY
+  MIN_OCCURENCE, PURITY
 };
 
 enum EquivalenceDetectionMethod {
@@ -43,8 +43,7 @@ public:
   GateAnalyzer(ClauseList* clauseList);
   virtual ~GateAnalyzer();
 
-  void analyzeEncoding(RootSelectionMethod selection, EquivalenceDetectionMethod eqivalence, int tries);
-  void analyzeEncoding2(RootSelectionMethod selectionMethod, EquivalenceDetectionMethod eqivalence, int tries);
+  void analyzeEncoding(RootSelectionMethod selectionMethod, EquivalenceDetectionMethod eqivalence, int tries);
 
   /**
    * Access Gate-Structure
@@ -101,7 +100,6 @@ private:
   bool semanticCheck(Literal output, ClauseList* fwd);
   bool increment(vector<int>& positions, vector<int> maxima);
 
-  PooledLiterals* getNextClause(ClauseList* list, RootSelectionMethod method);
   ClauseList* getNextClauses(ClauseList* list, RootSelectionMethod method);
 };
 

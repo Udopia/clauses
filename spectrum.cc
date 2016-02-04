@@ -5,17 +5,6 @@
  *      Author: markus
  */
 
-//#include <climits>
-//
-//#include <stdlib.h>
-//#include <string.h>
-//#include <assert.h>
-//#include <algorithm>
-//
-//#include <stdarg.h>
-//
-//#include <sys/resource.h>
-
 #include <vector>
 #include <iostream>
 #include <stdio.h>

@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
   }
 
   char* filename = argv[1];
-  RootSelectionMethod method = FIRST_CLAUSE;
+  RootSelectionMethod method = MIN_OCCURENCE;
   EquivalenceDetectionMethod eq_method = PATTERNS;
   int tries = 1;
   bool help = false;
@@ -52,10 +52,9 @@ int main(int argc, char** argv) {
     if (strcmp(argv[i], "-m") == 0 && i < argc - 1) {
       int m = atoi(argv[++i]);
       switch (m) {
-      case 1: method = MAX_ID; break;
       case 2: method = MIN_OCCURENCE; break;
-      case 3: method = PURE; break;
-      default: method = FIRST_CLAUSE;
+      case 3: method = PURITY; break;
+      default: method = MIN_OCCURENCE;
       }
     }
     else if (strcmp(argv[i], "-e") == 0 && i < argc - 1) {

@@ -298,10 +298,9 @@ int main(int argc, char** argv) {
     if (strcmp(argv[i], "-m") == 0 && i < argc - 1) {
       int m = atoi(argv[++i]);
       switch (m) {
-      case 1: method = MAX_ID; break;
       case 2: method = MIN_OCCURENCE; break;
-      case 3: method = PURE; break;
-      default: method = FIRST_CLAUSE;
+      case 3: method = PURITY; break;
+      default: method = MIN_OCCURENCE;
       }
     }
     else if (strcmp(argv[i], "-e") == 0 && i < argc - 1) {
