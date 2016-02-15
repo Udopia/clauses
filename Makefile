@@ -2,7 +2,7 @@
 SRCS = $(wildcard misc/*.cc) $(wildcard types/*.cc) $(wildcard tools/*.cc) $(wildcard filters/*.cc) $(wildcard minisat/*.cc) $(wildcard ./*.cc)
 HDRS = $(wildcard misc/*.h) $(wildcard types/*.h) $(wildcard tools/*.h) $(wildcard filters/*.h) $(wildcard minisat/*.h) $(wildcard ./*.h)
 
-MAINS = ./cnf2aig.o ./cnf2dot.o ./geninp.o ./metrics.o ./spectrum.o
+MAINS = ./cnf2aig.o ./cnf2dot.o ./geninp.o ./metrics.o ./spectrum.o ./preprocess.o
 ALLOBJS = $(SRCS:.cc=.o)
 OBJS = $(filter-out $(MAINS), $(ALLOBJS))
 DEPS = $(SRCS:.cc=.d)
@@ -50,36 +50,42 @@ filters/%.o: filters/%.cc
 	@echo ' '
 
 # All Target
-all: cnf2aig cnf2dot geninp metrics
+all: cnf2aig cnf2dot geninp metrics preprocess
 
 # Tool invocations
 cnf2aig: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -static -o "$@" $(OBJS) $@.o -lz $(MINI2)
+	g++ -static -flto -o "$@" $(OBJS) $@.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 cnf2dot: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -static -o "cnf2dot" $(OBJS) cnf2dot.o -lz $(MINI2)
+	g++ -static -flto -o "cnf2dot" $(OBJS) cnf2dot.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 geninp: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -static -o "geninp" $(OBJS) geninp.o -lz $(MINI2)
+	g++ -static -flto -o "geninp" $(OBJS) geninp.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 metrics: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -static -o "metrics" $(OBJS) metrics.o -lz $(MINI2)
+	g++ -static -flto -o "metrics" $(OBJS) metrics.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 spectrum: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -static -o "spectrum" $(OBJS) spectrum.o -lz $(MINI2)
+	g++ -static -flto -o "spectrum" $(OBJS) spectrum.o -lz $(MINI2)
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+preprocess: $(ALLOBJS)
+	@echo 'Building target: $@'
+	g++ -static -flto -o "preprocess" $(OBJS) preprocess.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -88,7 +94,7 @@ clean:
 	rm $(ALLOBJS) $(DEPS)
 
 realclean: clean
-	rm cnf2aig cnf2dot geninp metrics spectrum
+	rm cnf2aig cnf2dot geninp metrics spectrum preprocess
 
 
 

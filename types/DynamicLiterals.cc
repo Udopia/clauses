@@ -175,7 +175,7 @@ bool DynamicLiterals::equals(DynamicLiterals* clause) {
 void DynamicLiterals::print(FILE* out) {
   fprintf(out, "(");
   for (iterator it = literals->begin(); it != literals->end(); ++it) {
-    fprintf(out, "%s%s%i", it != literals->begin() ? "," : "", sign(*it) ? "-" : "", 1+var(*it));
+    fprintf(out, "%s%s%i", it != literals->begin() ? "," : "", sign(*it) ? "-" : "", var(*it));
   }
   fprintf(out, ")");
 }
@@ -187,7 +187,7 @@ void DynamicLiterals::println(FILE* out) {
 
 void DynamicLiterals::printDimacs(FILE* out) {
   for (iterator it = literals->begin(); it != literals->end(); ++it) {
-    fprintf(out, "%s%i ", sign(*it) ? "-" : "", 1+var(*it));
+    fprintf(out, "%s%i ", sign(*it) ? "-" : "", var(*it));
   }
   fprintf(out, "0\n");
 }
@@ -197,7 +197,7 @@ std::string* DynamicLiterals::toString() {
   val->append("(");
   for (iterator it = literals->begin(); it != literals->end(); ++it) {
     char buf[256];
-    sprintf(buf, "%s%s%i", it != literals->begin() ? "," : "", sign(*it) ? "-" : "", 1+var(*it));
+    sprintf(buf, "%s%s%i", it != literals->begin() ? "," : "", sign(*it) ? "-" : "", var(*it));
     val->append(buf);
   }
   val->append(")");

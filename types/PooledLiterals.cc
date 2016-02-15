@@ -85,6 +85,7 @@ void PooledLiterals::add(Literal lit) {
   else if (watcher[1] == litFalse) watcher[1] = lit;
   literals = lits;
   max_var = std::max(var(lit), max_var);
+  nlits++;
 }
 
 void PooledLiterals::addAll(PooledLiterals* clause) {
@@ -94,6 +95,7 @@ void PooledLiterals::addAll(PooledLiterals* clause) {
   pool->free(literals);
   literals = lits;
   max_var = std::max(clause->max_var, max_var);
+  nlits = nlits + clause->nlits;
 }
 
 bool PooledLiterals::remove(Literal lit) {

@@ -271,6 +271,7 @@ void ClauseList::print(FILE* out) {
 }
 
 void ClauseList::printDimacs(FILE* out) {
+  fprintf(out, "p cnf %i %i\n", maxVar()+1, size());
   for (unsigned int i = 0; i < clauses->size(); ++i) {
     Dark::PooledLiterals* clause = (*clauses)[i];
     if (clause != NULL) {
