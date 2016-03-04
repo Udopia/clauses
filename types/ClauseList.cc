@@ -211,8 +211,11 @@ bool ClauseList::matchesFullGatePattern(Literal lit, ClauseList* other) {
   if (this->size() == 1 && other->size() == otherLits->size()-1) {
     result = other->maxClauseSize() == other->minClauseSize() && other->maxClauseSize() == 2;
   }
-  if (other->size() == 1 && this->size() == thisLits->size()-1) {
+  if (!result && other->size() == 1 && this->size() == thisLits->size()-1) {
     result = this->maxClauseSize() == this->minClauseSize() && this->maxClauseSize() == 2;
+  }
+  if (!result && this->size() == 2 && other->size() == 2 && thisLits->size() == 5 && otherLits->size() == 5) {
+    result = this->maxClauseSize() == this->minClauseSize() && this->maxClauseSize() == 3;
   }
 
   delete thisLits;
