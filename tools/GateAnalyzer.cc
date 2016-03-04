@@ -65,6 +65,7 @@ GateAnalyzer::GateAnalyzer(ClauseList* clauseList) {
   for (unsigned int i = 0; i < units->size(); i++) {
     index->augment(units->get(i), ~root);
   }
+  delete units;
 }
 
 GateAnalyzer::~GateAnalyzer() {
@@ -72,8 +73,22 @@ GateAnalyzer::~GateAnalyzer() {
       it != parents->end(); ++it) {
     delete it->second;
   }
+  if (projection != nullptr) {
+    delete projection;
+  }
+  if (inputs != nullptr) {
+    delete inputs;
+  }
   delete index;
   delete parents;
+  if (gates != nullptr) {
+    for (Gate* gate : *gates) {
+      if (gate != nullptr) {
+        delete gate;
+      }
+    }
+    delete gates;
+  }
 }
 
 MinisatSolver* GateAnalyzer::getMinisatSolver() {
@@ -281,43 +296,47 @@ void GateAnalyzer::analyzeEncodingForRoot(Literal root, EquivalenceDetectionMeth
 }
 
 ClauseList* GateAnalyzer::getNextClauses(ClauseList* list, RootSelectionMethod method) {
+  ClauseIndex index {list};
   switch (method) {
   case MIN_OCCURENCE: {
     Literal min;
     int minOcc = INT_MAX;
-    ClauseIndex* index = new ClauseIndex(list);
     for (int i = 0; i < list->maxVar(); i++) {
       Literal lit = mkLit(i, false);
-      int occ = index->countOccurence(lit);
+      int occ = index.countOccurence(lit);
       if (occ != 0 && occ < minOcc) {
         minOcc = occ;
         min = lit;
       }
-      occ = index->countOccurence(~lit);
+      occ = index.countOccurence(~lit);
       if (occ != 0 && occ < minOcc) {
         minOcc = occ;
         min = ~lit;
       }
     }
-    return index->getClauses(min);
+    ClauseList* result = new ClauseList();
+    result->addAll(index.getClauses(min));
+    return result;
   }
   case PURITY: {
     Var maxVar;
     double maxPurity = 0;
-    ClauseIndex* index = new ClauseIndex(list);
     for (int i = 0; i < list->maxVar(); i++) {
       Literal lit = mkLit(i, false);
-      double pos = index->countOccurence(lit);
-      double neg = index->countOccurence(~lit);
+      double pos = index.countOccurence(lit);
+      double neg = index.countOccurence(~lit);
       double purity = abs(pos - neg) / (pos + neg);
       if (purity > maxPurity) {
         maxPurity = purity;
         maxVar = i;
       }
     }
-    double pos = index->countOccurence(mkLit(maxVar, false));
-    double neg = index->countOccurence(mkLit(maxVar, true));
-    return pos < neg ? index->getClauses(mkLit(maxVar, false)) : index->getClauses(mkLit(maxVar, true));
+    double pos = index.countOccurence(mkLit(maxVar, false));
+    double neg = index.countOccurence(mkLit(maxVar, true));
+
+    ClauseList* result = new ClauseList();
+    result->addAll(pos < neg ? index.getClauses(mkLit(maxVar, false)) : index.getClauses(mkLit(maxVar, true)));
+    return result;
   }
   default:
     return list;
@@ -403,9 +422,9 @@ Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
 void GateAnalyzer::undefGate(Gate* gate) {
   gate->getForwardClauses()->unmarkAll();
   gate->getBackwardClauses()->unmarkAll();
-  delete gate;
   (*gates)[var(gate->getOutput())] = NULL;
   unsetParent(gate->getOutput());
+  delete gate;
 }
 
 void GateAnalyzer::setProjection(Projection* projection) {

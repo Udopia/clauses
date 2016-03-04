@@ -46,7 +46,7 @@ LiteralPool::Offset LiteralPool::alloc(unsigned int count) {
 LiteralPool::Offset LiteralPool::alloc(Literal literals[], unsigned int count) {
   Offset offset = cursor - pool; // store offset
   if (offset + count + 2 >= size) { // grow to size
-    Literal* buffer = malloc(count * sizeof(Literal));
+    Literal* buffer = (Literal*)malloc(count * sizeof(Literal));
     memcpy(buffer, literals, count * sizeof(Literal)); // save in buffer due to memory reallocation in grow()
     grow();
     memcpy(cursor, buffer, count * sizeof(Literal)); // copy literals

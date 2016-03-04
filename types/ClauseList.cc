@@ -201,18 +201,23 @@ bool ClauseList::matchesFullGatePattern(Literal lit, ClauseList* other) {
   DynamicLiterals* otherLits = other->getUnionOfLiterals();
   otherLits->inlineNegate();
   if (!thisLits->equals(otherLits)) {
+    delete thisLits;
+    delete otherLits;
     return false;
   }
 
   // fast and-/or-detection
+  bool result = false;
   if (this->size() == 1 && other->size() == otherLits->size()-1) {
-    return other->maxClauseSize() == other->minClauseSize() && other->maxClauseSize() == 2;
+    result = other->maxClauseSize() == other->minClauseSize() && other->maxClauseSize() == 2;
   }
   if (other->size() == 1 && this->size() == thisLits->size()-1) {
-    return this->maxClauseSize() == this->minClauseSize() && this->maxClauseSize() == 2;
+    result = this->maxClauseSize() == this->minClauseSize() && this->maxClauseSize() == 2;
   }
 
-  return false;
+  delete thisLits;
+  delete otherLits;
+  return result;
 }
 
 DynamicLiterals* ClauseList::getUnionOfLiterals() {
