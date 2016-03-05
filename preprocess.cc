@@ -236,8 +236,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  analyzer = new GateAnalyzer(clauses);
-  analyzer->analyzeEncoding(method, eq_method, tries);
+  analyzer = new GateAnalyzer(clauses, method, eq_method);
+  analyzer->analyzeEncoding(tries);
 
   width = new vector<int>(clauses->maxVar()+1, 1);
   calculateAlternatives(analyzer->getRoot());

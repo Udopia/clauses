@@ -18,6 +18,7 @@
 #include "misc/Dimacs.h"
 
 #include "tools/GateAnalyzer.h"
+#include "tools/Gate.h"
 
 #include "types/Literal.h"
 #include "types/DynamicLiterals.h"
@@ -120,7 +121,7 @@ void traverseDAG() {
     D1(fprintf(stderr, "Literal %s%i\n", sign(lit)?"-":"", var(lit)+1));
 
     if (gates->hasInputs(lit)) {
-      ClauseList* clauses = gates->getGateClauses(lit);
+      ClauseList* clauses = gates->getGate(lit)->getForwardClauses();
 
       D1(fprintf(stderr, "create aig from gate: ");
       clauses->print(stderr);
@@ -358,10 +359,10 @@ int main(int argc, char** argv) {
   visitedNodes = new vector<bool>((problem->getRealNVars()+2)*2, false);
 
   ClauseList* clauses = problem->getClauses();
-  gates = new GateAnalyzer(clauses);
-  gates->analyzeEncoding(method, eq_method, tries);
+  gates = new GateAnalyzer(clauses, method, eq_method);
+  gates->analyzeEncoding(tries);
 
-  maxVariable = gates->getClauses()->maxVar()+1;
+  maxVariable = clauses->maxVar()+1;
 
   literals = new vector<Literal>();
   root = gates->getRoot();

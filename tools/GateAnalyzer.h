@@ -40,38 +40,27 @@ enum EquivalenceDetectionMethod {
 
 class GateAnalyzer {
 public:
-  GateAnalyzer(ClauseList* clauseList);
+  GateAnalyzer(ClauseList* clauseList, RootSelectionMethod sel = MIN_OCCURENCE, EquivalenceDetectionMethod eq = PATTERNS);
   virtual ~GateAnalyzer();
 
-  void analyzeEncoding(RootSelectionMethod selectionMethod, EquivalenceDetectionMethod eqivalence, int tries);
+  void analyzeEncoding(int tries);
 
-  /**
-   * Access Gate-Structure
-   */
   Literal getRoot();
   Gate* getGate(Literal output);
   Gate* getOrCreateGate(Literal output);
+
   vector<Literal>* getInputs(Literal parent);
-  int countInputs(Literal parent);
   bool hasInputs(Literal parent);
+
   vector<Literal>* getParents(Literal child);
-  int countParents(Literal child);
-  bool hasParents(Literal child);
-  ClauseList* getGateClauses(Literal literal);
 
   void setAsInput(Literal literal);
-  bool isUsedAsInput(Literal literal);
   bool isMonotonousInput(Var var);
 
-  void setProjection(Projection* projection);
-  bool projectionContains(Var var);
-
-  ClauseList* getClauses() {
-    return (ClauseList*)clauses;
-  }
-
-
 private:
+  RootSelectionMethod selectionMethod;
+  EquivalenceDetectionMethod equivalenceDetectionMethod;
+
   ClauseList* clauses;
   ClauseIndex* index;
 
@@ -84,23 +73,21 @@ private:
 
   Literal root;
 
-  Projection* projection;
-
   MinisatSolver* getMinisatSolver();
 
-  void analyzeEncodingForRoot(Literal root, EquivalenceDetectionMethod eqivalence);
+  void analyzeEncodingForRoot(Literal root);
 
   void setParent(Literal parent, Literal child);
-  void unsetParent(Literal parent);
 
   Gate* defGate(Literal output, ClauseList* fwd, ClauseList* bwd);
-  void undefGate(Gate* gate);
 
-  bool isFullEncoding(Literal output, ClauseList* fwd, ClauseList* bwd, EquivalenceDetectionMethod equivalence);
+  bool isFullEncoding(Literal output, ClauseList* fwd, ClauseList* bwd);
   bool semanticCheck(Literal output, ClauseList* fwd);
   bool increment(vector<int>& positions, vector<int> maxima);
 
-  ClauseList* getNextClauses(ClauseList* list, RootSelectionMethod method);
+  ClauseList* getNextClauses(ClauseList* list);
+
+  Literal createRoot(ClauseList* clauses);
 };
 
 }

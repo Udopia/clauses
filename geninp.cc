@@ -96,12 +96,12 @@ int main(int argc, char** argv) {
   gzclose(in);
   ClauseList* clauses = problem->getClauses();
 
-  analyzer = new GateAnalyzer(clauses);
-  analyzer->analyzeEncoding(method, eq_method, tries);
+  analyzer = new GateAnalyzer(clauses, method, eq_method);
+  analyzer->analyzeEncoding(tries);
 
   vector<int>* inputs = new vector<int>();
 
-  for (int i = 0; i < analyzer->getClauses()->maxVar(); i++) {
+  for (int i = 0; i < clauses->maxVar(); i++) {
     Literal lit1 = mkLit(i, false);
     Literal lit2 = mkLit(i, true);
     if (!analyzer->hasInputs(lit1) && !analyzer->hasInputs(lit2)) {
