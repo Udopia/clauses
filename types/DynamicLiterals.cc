@@ -45,10 +45,6 @@ DynamicLiterals::~DynamicLiterals() {
   delete literals;
 }
 
-void DynamicLiterals::Init() {
-  literals = new std::vector<Literal>();
-}
-
 /**
  * Manipulators
  */

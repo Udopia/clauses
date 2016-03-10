@@ -201,23 +201,13 @@ int main(int argc, char** argv) {
   vector<int>* nClausesInGate = new vector<int>();
   int nGates = 0;
 
-  int nSimpleGates = 0;
-  int nUsedGates = 0;
-
   for (int i = 0; i < nVars+1; i++) {
     Gate* gate = analyzer->getGate(mkLit(i, false));
     if (gate == NULL) {
       gate = analyzer->getGate(mkLit(i, true));
     }
     if (gate != NULL) {
-      Literal output = gate->getOutput();
       nGates++;
-      if (gate->getBackwardClauses()->size() == 0) {
-        nSimpleGates++;
-      }
-      if (analyzer->getParents(output) != NULL && analyzer->getParents(output)->size() > 1) {
-        nUsedGates++;
-      }
       nClausesInGate->push_back(gate->getForwardClauses()->size() + gate->getBackwardClauses()->size());
     }
   }

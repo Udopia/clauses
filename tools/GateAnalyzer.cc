@@ -32,55 +32,26 @@
 
 namespace Dark {
 
-GateAnalyzer::GateAnalyzer(ClauseList* clauseList, RootSelectionMethod sel = MIN_OCCURENCE, EquivalenceDetectionMethod eq = PATTERNS) {
-  clauses = clauseList;
-  root = createRoot(clauseList);
-  index = new ClauseIndex(clauses);
+GateAnalyzer::GateAnalyzer(ClauseList* clauses, RootSelectionMethod sel, EquivalenceDetectionMethod eq) {
+  this->clauses = clauses;
+
   selectionMethod = sel;
   equivalenceDetectionMethod = eq;
 
-  parents = new map<Literal, vector<Literal>*>();
-  inputs = new map<Literal, bool>();
+  gates = new vector<Gate*>(clauses->maxVar() + 1, NULL);
+  inputs = new vector<bool>(2*clauses->maxVar() + 2, false);
 
   minisat = NULL;
-
-  // create some data-structures for each variable
-  gates = new vector<Gate*>(clauses->maxVar() + 1, NULL);
-  for (int i = 0; i <= clauses->maxVar(); i++) {
-    (*parents)[mkLit(i, false)] = new vector<Literal>();
-    (*parents)[mkLit(i, true)] = new vector<Literal>();
-    (*inputs)[mkLit(i, false)] = false;
-    (*inputs)[mkLit(i, true)] = false;
-  }
 }
 
 GateAnalyzer::~GateAnalyzer() {
-  for (map<Literal, vector<Literal>*>::iterator it = parents->begin(); it != parents->end(); ++it) {
-    delete it->second;
-  }
-  delete parents;
   delete inputs;
-  delete index;
   for (Gate* gate : *gates) {
     if (gate != nullptr) {
       delete gate;
     }
   }
   delete gates;
-}
-
-Literal GateAnalyzer::createRoot(ClauseList* clauses) {
-  Literal root = mkLit(clauses->newVar(), false);
-  for (PooledLiterals* clause : *clauses) {
-    if (clause->size() == 1) {
-      clause->add(~root);
-    }
-  }
-  // note: it is important to add the new unit _after_ filtering the existing units:
-  PooledLiterals* rootClause = new PooledLiterals(root);
-  clauses->add(rootClause);
-  rootClause->setMarked();
-  return root;
 }
 
 MinisatSolver* GateAnalyzer::getMinisatSolver() {
@@ -103,18 +74,6 @@ Gate* GateAnalyzer::getGate(Literal output) {
   }
 }
 
-Gate* GateAnalyzer::getOrCreateGate(Literal output) {
-  Gate* gate = (*gates)[var(output)];
-  if (gate != NULL && gate->getOutput() == output) {
-    return gate;
-  } else {
-    assert(gate == NULL && "gate must not exist");
-    gate = new Gate(output, new ClauseList(), new ClauseList());
-    (*gates)[var(output)] = gate;
-    return gate;
-  }
-}
-
 vector<Literal>* GateAnalyzer::getInputs(Literal parent) {
   Gate* gate = getGate(parent);
   return gate != NULL ? gate->getInputs() : NULL;
@@ -125,83 +84,64 @@ bool GateAnalyzer::hasInputs(Literal parent) {
   return inputs != NULL && inputs->size() > 0;
 }
 
-vector<Literal>* GateAnalyzer::getParents(Literal child) {
-  return (*parents)[child];
-}
-
-void GateAnalyzer::setParent(Literal parent, Literal child) {
-  D2(fprintf(stderr, "Adding Parent-child-relationship: %s%i -> %s%i\n", sign(parent)?"-":"", var(parent), sign(child)?"-":"", var(child));)
-  if (std::find((*parents)[child]->begin(), (*parents)[child]->end(), parent) == (*parents)[child]->end()) {
-    (*parents)[child]->push_back(parent);
-  }
-}
-
 void GateAnalyzer::setAsInput(Literal literal) {
-  (*inputs)[literal] = true;
+  (*inputs)[toInt(literal)] = true;
 }
 
 bool GateAnalyzer::isMonotonousInput(Var var) {
-  return !(*inputs)[mkLit(var, false)] || !(*inputs)[mkLit(var, true)];
+  return !(*inputs)[2*var] || !(*inputs)[2*var+1];
 }
 
+void GateAnalyzer::createRootGate(ClauseList* roots) {
+  root = mkLit(clauses->newVar(), false);
+  clauses->add(new PooledLiterals(root));
+  for (ClauseList::iterator clit = roots->begin(); clit != roots->end(); clit++) {
+    (*clit)->add(~root);
+  }
+  (*gates)[var(root)] = new Gate(root, roots, NULL);
+}
 
-/***
- * The more general approach.
- * Analyze until all clauses are part of the hierarchy.
- * Select Clauses by the following heuristic:
- * 1. first select all unit-clauses
- * 2. if there is still a side-problem and no unit-clause left, select set of of clauses by heuristic
- * 3. in the end forge together all selected root-clauses by one unit that implies them all
- */
 void GateAnalyzer::analyzeEncoding(int tries) {
-  analyzeEncodingForRoot(root);
+  ClauseIndex* index = new ClauseIndex(clauses);
 
-  ClauseList* remainder = clauses->getByCriteria(createNoMarkFilter());
-  for (int count = 0; count < tries && remainder->size() > 0; count++) {
-    ClauseList* nextClauses = getNextClauses(remainder);
+  ClauseList* roots = new ClauseList();
+  ClauseList* next = new ClauseList();
 
-    // thread next clauses
-    for (ClauseList::iterator clit = nextClauses->begin(); clit != nextClauses->end(); clit++) {
-      PooledLiterals* clause = *clit;
-      clause->setMarked();
-      getOrCreateGate(root)->addForwardClause(clause);
-      for (PooledLiterals::iterator it = clause->begin(); it != clause->end(); it++) {
-        setParent(root, *it);
+  for (PooledLiterals* clause : *clauses) {
+    if (clause->size() == 1) {
+      next->add(clause);
+    }
+  }
+
+  for (int count = 0; count < tries && next->size() > 0; count++) {
+    roots->addAll(next);
+    index->removeAll(next);
+
+    for (ClauseList::iterator clit = next->begin(); clit != next->end(); clit++) {
+      (*clit)->setMarked();
+      for (PooledLiterals::iterator lit = (*clit)->begin(); *lit != litFalse; lit++) {
+        setAsInput(*lit);
       }
-      index->augment(clause, ~root);
     }
 
     // iterate new inputs
-    for (ClauseList::iterator clit = nextClauses->begin(); clit != nextClauses->end(); clit++) {
-      PooledLiterals* clause = *clit;
-      for (PooledLiterals::iterator it = clause->begin(); it != clause->end(); it++) {
-        if (*it != ~root)
-          analyzeEncodingForRoot(*it);
+    for (ClauseList::iterator clit = next->begin(); clit != next->end(); clit++) {
+      for (PooledLiterals::iterator lit = (*clit)->begin(); *lit != litFalse; lit++) {
+        analyzeEncodingBFS(*lit, index);
       }
     }
-    remainder->dumpByCriteria(createMarkFilter());
+
+    delete next;
+    next = getNextClauses(index);
   }
 
-  for (ClauseList::iterator it = remainder->begin(); it != remainder->end(); it++) {
-    PooledLiterals* next = *it;
-    next->setMarked();
-    index->augment(next, ~root);
-    getOrCreateGate(root)->addForwardClause(next);
-    for (PooledLiterals::iterator it2 = next->begin(); *it2 != litFalse; it2++) {
-      setParent(root, *it2);
-    }
+  for (ClauseList::iterator clit = clauses->begin(); clit != clauses->end(); clit++) {
+    if (!(*clit)->isMarked()) roots->add(*clit);
   }
-
-  delete remainder;
+  createRootGate(roots);
 }
 
-/*******
- * Create a DAG starting from a fact. Detect cycles and stop if necessary
- ***/
-void GateAnalyzer::analyzeEncodingForRoot(Literal root) {
-  D1(fprintf(stderr, "Root is %s%i\n", sign(root) ? "-" : "", var(root));)
-
-  // a queue of literals that grows while checking for implicates
+void GateAnalyzer::analyzeEncodingBFS(Literal root, ClauseIndex* index) {
   vector<Literal>* literals = new vector<Literal>();
   literals->push_back(root);
 
@@ -209,52 +149,37 @@ void GateAnalyzer::analyzeEncodingForRoot(Literal root) {
   for (unsigned int i_lit = 0; i_lit < literals->size(); i_lit++) {
     Literal output = (*literals)[i_lit];
 
-    Gate* gate = NULL;
-
-    ClauseList* fwd = index->getClauses(~output)->getByCriteria(createNoMarkFilter());
-    ClauseList* bwd = index->getClauses(output)->getByCriteria(createNoMarkFilter());
-
-    D1(
-        fprintf(stderr, "Running Gate-Detection on %s%i\n", sign(output)?"-":"", var(output));
-        fwd->print(stderr);
-        bwd->print(stderr);
-        fprintf(stderr, "\n");
-    )
+    ClauseList* fwd = index->getClauses(~output);
+    ClauseList* bwd = index->getClauses(output);
 
     if (fwd->size() > 0 && bwd->isBlockedBy(output, fwd)) {
-      if (isMonotonousInput(var(output))) {
-        D1(fprintf(stderr, "Monotonous Parents %s%i\n", sign(output)?"-":"", var(output));)
-        gate = defGate(output, fwd, bwd);
-      } else if (isFullEncoding(output, fwd, bwd)) { // non-monotonous
-        D1(fprintf(stderr, "Non-Monotonous Parents %s%i\n", sign(output)?"-":"", var(output)+1);)
-        gate = defGate(output, fwd, bwd);
-        gate->setHasNonMonotonousParent();
+      bool monotonous = isMonotonousInput(var(output));
+      if (monotonous || isFullEncoding(output, fwd, bwd)) {
+        Gate* gate = defGate(output, fwd, bwd, monotonous);
+        index->removeAll(gate->getForwardClauses());
+        index->removeAll(gate->getBackwardClauses());
+        literals->insert(literals->end(), gate->getInputs()->begin(), gate->getInputs()->end());
       }
-    }
-
-    if (gate != NULL) {
-      literals->insert(literals->end(), gate->getInputs()->begin(), gate->getInputs()->end());
-    } else {
-      delete bwd;
-      delete fwd;
     }
   }
 
   delete literals;
 }
 
-Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
-  fwd->markAll();
-  bwd->markAll();
+Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd, bool monotonous) {
   Gate* gate = new Gate(output, fwd, bwd);
   (*gates)[var(output)] = gate;
+  fwd->markAll();
+  bwd->markAll();
+
+  if (!monotonous) {
+    gate->setHasNonMonotonousParent();
+  }
 
   vector<Literal>* inputs = gate->getInputs();
-  for (std::vector<Literal>::iterator lit = inputs->begin();
-      lit != inputs->end(); ++lit) {
-    setParent(output, *lit);
+  for (std::vector<Literal>::iterator lit = inputs->begin(); lit != inputs->end(); ++lit) {
     setAsInput(*lit);
-    if (!isMonotonousInput(var(output))) {
+    if (!monotonous) {
       setAsInput(~(*lit));
     }
   }
@@ -262,52 +187,46 @@ Gate* GateAnalyzer::defGate(Literal output, ClauseList* fwd, ClauseList* bwd) {
   return gate;
 }
 
-ClauseList* GateAnalyzer::getNextClauses(ClauseList* list) {
-  ClauseIndex index {list};
+ClauseList* GateAnalyzer::getNextClauses(ClauseIndex* index) {
+  ClauseList* result = new ClauseList();
   switch (selectionMethod) {
   case MIN_OCCURENCE: {
     Literal min;
     int minOcc = INT_MAX;
-    for (int i = 0; i < list->maxVar(); i++) {
-      Literal lit = mkLit(i, false);
-      int occ = index.countOccurence(lit);
-      if (occ != 0 && occ < minOcc) {
-        minOcc = occ;
-        min = lit;
-      }
-      occ = index.countOccurence(~lit);
-      if (occ != 0 && occ < minOcc) {
-        minOcc = occ;
-        min = ~lit;
+    for (int i = 0; i < clauses->maxVar(); i++) {
+      for (int b = 0; b < 2; b++) {
+        Literal lit = mkLit(i, b % 2 == 0);
+        int occ = index->countOccurence(lit);
+        if (occ != 0 && occ < minOcc) {
+          minOcc = occ;
+          min = lit;
+        }
       }
     }
-    ClauseList* result = new ClauseList();
-    result->addAll(index.getClauses(min));
-    return result;
+    result->addAll(index->getClauses(min));
+    break;
   }
   case PURITY: {
     Var maxVar;
     double maxPurity = 0;
-    for (int i = 0; i < list->maxVar(); i++) {
+    for (int i = 0; i < clauses->maxVar(); i++) {
       Literal lit = mkLit(i, false);
-      double pos = index.countOccurence(lit);
-      double neg = index.countOccurence(~lit);
+      double pos = index->countOccurence(lit);
+      double neg = index->countOccurence(~lit);
       double purity = abs(pos - neg) / (pos + neg);
       if (purity > maxPurity) {
         maxPurity = purity;
         maxVar = i;
       }
     }
-    double pos = index.countOccurence(mkLit(maxVar, false));
-    double neg = index.countOccurence(mkLit(maxVar, true));
+    double pos = index->countOccurence(mkLit(maxVar, false));
+    double neg = index->countOccurence(mkLit(maxVar, true));
 
-    ClauseList* result = new ClauseList();
-    result->addAll(pos < neg ? index.getClauses(mkLit(maxVar, false)) : index.getClauses(mkLit(maxVar, true)));
-    return result;
+    result->addAll(pos < neg ? index->getClauses(mkLit(maxVar, false)) : index->getClauses(mkLit(maxVar, true)));
+    break;
   }
-  default:
-    return list;
   }
+  return result;
 }
 
 bool GateAnalyzer::isFullEncoding(Literal output, ClauseList* fwd, ClauseList* bwd) {

@@ -47,12 +47,9 @@ public:
 
   Literal getRoot();
   Gate* getGate(Literal output);
-  Gate* getOrCreateGate(Literal output);
 
   vector<Literal>* getInputs(Literal parent);
   bool hasInputs(Literal parent);
-
-  vector<Literal>* getParents(Literal child);
 
   void setAsInput(Literal literal);
   bool isMonotonousInput(Var var);
@@ -62,32 +59,25 @@ private:
   EquivalenceDetectionMethod equivalenceDetectionMethod;
 
   ClauseList* clauses;
-  ClauseIndex* index;
+
+  Literal root;
+  vector<Gate*>* gates;
+  vector<bool>* inputs;
 
   MinisatSolver* minisat;
 
-  map<Literal, vector<Literal>*>* parents;
-  map<Literal, bool>* inputs;
-
-  vector<Gate*>* gates;
-
-  Literal root;
-
   MinisatSolver* getMinisatSolver();
 
-  void analyzeEncodingForRoot(Literal root);
+  void analyzeEncodingBFS(Literal root, ClauseIndex* index);
 
-  void setParent(Literal parent, Literal child);
-
-  Gate* defGate(Literal output, ClauseList* fwd, ClauseList* bwd);
+  Gate* defGate(Literal output, ClauseList* fwd, ClauseList* bwd, bool monotonous);
 
   bool isFullEncoding(Literal output, ClauseList* fwd, ClauseList* bwd);
   bool semanticCheck(Literal output, ClauseList* fwd);
   bool increment(vector<int>& positions, vector<int> maxima);
 
-  ClauseList* getNextClauses(ClauseList* list);
-
-  Literal createRoot(ClauseList* clauses);
+  ClauseList* getNextClauses(ClauseIndex* index);
+  void createRootGate(ClauseList* rootClauses);
 };
 
 }

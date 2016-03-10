@@ -27,8 +27,6 @@ private:
 
   int max_var = 0;
 
-  void Init();
-
 protected:
   LiteralList* literals;
 

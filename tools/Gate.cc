@@ -11,10 +11,10 @@
 
 namespace Dark {
 
-Gate::Gate(Literal output, ClauseList* forward, ClauseList* backward) {
+Gate::Gate(Literal output, ClauseList* fwd, ClauseList* bwd) {
   this->output = output;
-  this->forward = forward;
-  this->backward = backward;
+  this->forward = new ClauseList(fwd);
+  this->backward = new ClauseList(bwd);
   this->nonMonotonousParent = false;
 
   this->inputs = new vector<Literal>();

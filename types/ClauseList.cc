@@ -59,8 +59,12 @@ void ClauseList::add(PooledLiterals* clause) {
 }
 
 void ClauseList::remove(PooledLiterals* clause) {
-  (*clauses)[pos(clause)] = getLast();
-  clauses->pop_back();
+  for (std::vector<PooledLiterals*>::iterator it = clauses->begin(); it != clauses->end(); it++) {
+    if (*it == clause) {
+      it = clauses->erase(it);
+      return;
+    }
+  }
 }
 
 void ClauseList::addAll(ClauseList* list) {

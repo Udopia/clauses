@@ -2,7 +2,7 @@
 SRCS = $(wildcard misc/*.cc) $(wildcard types/*.cc) $(wildcard tools/*.cc) $(wildcard filters/*.cc) $(wildcard minisat/*.cc) $(wildcard ./*.cc)
 HDRS = $(wildcard misc/*.h) $(wildcard types/*.h) $(wildcard tools/*.h) $(wildcard filters/*.h) $(wildcard minisat/*.h) $(wildcard ./*.h)
 
-MAINS = ./cnf2aig.o ./cnf2dot.o ./geninp.o ./metrics.o ./spectrum.o ./preprocess.o
+MAINS = ./cnf2aig.o ./cnf2dot.o ./geninp.o ./metrics.o ./spectrum.o ./preprocess.o ./rosi.o
 ALLOBJS = $(SRCS:.cc=.o)
 OBJS = $(filter-out $(MAINS), $(ALLOBJS))
 DEPS = $(SRCS:.cc=.d)
@@ -73,7 +73,7 @@ geninp: $(ALLOBJS)
 
 metrics: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -static -flto -o "metrics" $(OBJS) metrics.o -lz $(MINI2)
+	g++ -o "metrics" $(OBJS) metrics.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -89,12 +89,18 @@ preprocess: $(ALLOBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
+rosi: $(ALLOBJS)
+	@echo 'Building target: $@'
+	g++ -static -flto -o "rosi" $(OBJS) rosi.o -lz $(MINI2)
+	@echo 'Finished building target: $@'
+	@echo ' '
+
 # Other Targets
 clean:
 	rm $(ALLOBJS) $(DEPS)
 
 realclean: clean
-	rm cnf2aig cnf2dot geninp metrics spectrum preprocess
+	rm cnf2aig cnf2dot geninp metrics spectrum preprocess rosi
 
 
 

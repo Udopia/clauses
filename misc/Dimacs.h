@@ -57,7 +57,7 @@ private:
   unsigned int declClauses;
   unsigned int trueVars;
   unsigned int trueClauses;
-  Literal* buffer;
+  Literal* buffer = NULL;
 
   Dark::ClauseList* clauses;
 
