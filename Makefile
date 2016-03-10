@@ -10,8 +10,8 @@ DEPS = $(SRCS:.cc=.d)
 MINI = -DMINISAT_TYPES=1 -Iminisat/solver -I/usr/include/eigen3
 MINI2 = -Lminisat/solver/build/release/lib -lminisat
 
-#CFLAGS = $(MINI) -D__GXX_EXPERIMENTAL_CXX0X__ -D__STDC_CONSTANT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -O3 -Wall -c -fmessage-length=0 -std=c++11 -fpermissive
-CFLAGS = $(MINI) -D__GXX_EXPERIMENTAL_CXX0X__ -D__STDC_CONSTANT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -g -Wall -c -fmessage-length=0 -std=c++0x -fpermissive
+CFLAGS = $(MINI) -D__GXX_EXPERIMENTAL_CXX0X__ -D__STDC_CONSTANT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -O3 -Wall -c -fmessage-length=0 -std=c++11 -fpermissive
+#CFLAGS = $(MINI) -D__GXX_EXPERIMENTAL_CXX0X__ -D__STDC_CONSTANT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -g -Wall -c -fmessage-length=0 -std=c++0x -fpermissive
 
 minisat/%.o: minisat/%.cc
 	@echo 'Building file: $<'
@@ -73,7 +73,7 @@ geninp: $(ALLOBJS)
 
 metrics: $(ALLOBJS)
 	@echo 'Building target: $@'
-	g++ -o "metrics" $(OBJS) metrics.o -lz $(MINI2)
+	g++ -static -flto -o "metrics" $(OBJS) metrics.o -lz $(MINI2)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
